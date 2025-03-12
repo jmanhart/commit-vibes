@@ -1,4 +1,4 @@
-import { select, multiselect, intro, outro } from "@clack/prompts";
+import { select, multiselect, confirm, intro, outro } from "@clack/prompts";
 import chalk from "chalk";
 import { getUnstagedFiles } from "./git-utils.js";
 import { VIBES } from "./vibes.js";
@@ -6,6 +6,15 @@ import { VIBES } from "./vibes.js";
 // Ask user if they want to stage changes
 export async function promptForStagingChoice() {
   const unstagedFiles = getUnstagedFiles();
+
+  if (!Array.isArray(unstagedFiles)) {
+    console.log(
+      chalk.red(
+        "❌ Error: unstagedFiles is not an array. Skipping staging step."
+      )
+    );
+    return "yes"; // Assume all files are staged if unstagedFiles is invalid
+  }
 
   if (unstagedFiles.length === 0) {
     console.log(chalk.green("✅ All changes are already staged."));
@@ -30,17 +39,37 @@ export async function promptForStagingChoice() {
 export async function promptForFileSelection() {
   const unstagedFiles = getUnstagedFiles();
 
-  if (unstagedFiles.length === 0) {
-    console.log(chalk.red("❌ No unstaged files available."));
+  // ✅ Ensure unstagedFiles is always an array
+  if (!Array.isArray(unstagedFiles)) {
+    console.log(
+      chalk.red(
+        "❌ Error: unstagedFiles is not an array. Skipping file selection."
+      )
+    );
     return [];
   }
 
-  const selectedFiles = await multiselect({
-    message: "Select files to stage:",
-    options: unstagedFiles.map((file) => ({ value: file, label: file })),
-  });
+  // ✅ If no unstaged files, return early
+  if (unstagedFiles.length === 0) {
+    console.log(
+      chalk.yellow("⚠️ No unstaged files available. Moving forward.")
+    );
+    return [];
+  }
 
-  return selectedFiles || []; // Ensure it's always an array
+  // ✅ Ensure Clack does not crash on an empty selection
+  const selectedFiles =
+    (await multiselect({
+      message: "Select files to stage:",
+      options: unstagedFiles.map((file) => ({ value: file, label: file })),
+    })) ?? [];
+
+  if (!Array.isArray(selectedFiles)) {
+    console.log(chalk.yellow("⚠️ No files selected. Skipping staging."));
+    return [];
+  }
+
+  return selectedFiles;
 }
 
 // Prompt user for mood selection
