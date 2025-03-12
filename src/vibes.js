@@ -1,10 +1,43 @@
 export const VIBES = [
-  { value: "🔥", label: "🔥 Fire" },
-  { value: "⚡", label: "⚡ Lightning" },
-  { value: "💀", label: "💀 Skull" },
-  { value: "✨", label: "✨ Sparkles" },
-  { value: "🦾", label: "🦾 Bionic" },
+  {
+    value: "😌 Feelin Confident",
+    label: "😌 Feelin Confident",
+    hint: "This commit is rock solid.",
+  },
+  {
+    value: "🤞 Feelin Hopeful",
+    label: "🤞 Feelin Hopeful",
+    hint: "I think this will work...",
+  },
+  {
+    value: "🤔 Feelin Uncertain",
+    label: "🤔 Feelin Uncertain",
+    hint: "Not sure if this is right.",
+  },
+  {
+    value: "😬 Feelin Nervous",
+    label: "😬 Feelin Nervous",
+    hint: "Please don’t break production.",
+  },
+  {
+    value: "🔥 Feelin Rushed",
+    label: "🔥 Feelin Rushed",
+    hint: "Had to push this quickly!",
+  },
+  {
+    value: "💀 Feelin Desperate",
+    label: "💀 Feelin Desperate",
+    hint: "It works, but I don’t know why.",
+  },
 ];
+
+// export const VIBES = [
+//   { value: "🔥", label: "🔥 Fire" },
+//   { value: "⚡", label: "⚡ Lightning" },
+//   { value: "💀", label: "💀 Skull" },
+//   { value: "✨", label: "✨ Sparkles" },
+//   { value: "🦾", label: "🦾 Bionic" },
+// ];
 
 // const VIBES = [
 //   { value: "😤", label: "😤 Frustrated" },
