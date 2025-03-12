@@ -1,6 +1,6 @@
 {
   "name": "commit-vibes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A CLI tool to add vibes to your Git commit messages",
   "bin": {
     "commit-vibes": "./bin/commit-vibes.js"
