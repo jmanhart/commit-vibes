@@ -35,7 +35,18 @@ export async function promptForStagingChoice() {
   });
 }
 
-// Prompt user to select specific files to stage
+// Step 2: Ask if user wants to add more files
+export async function promptForAdditionalFiles() {
+  return await select({
+    message: "Would you like to add more files before committing?",
+    options: [
+      { value: "yes", label: "✅ Yes, select files to add" },
+      { value: "no", label: "❌ No, continue to commit" },
+    ],
+  });
+}
+
+// Step 3: Show multi-select for unstaged files
 export async function promptForFileSelection() {
   const unstagedFiles = getUnstagedFiles();
 
@@ -69,10 +80,15 @@ export async function promptForFileSelection() {
     return [];
   }
 
-  return selectedFiles;
+  // Step 4: Confirm before staging
+  const confirmSelection = await confirm({
+    message: `Are you sure you want to stage ${selectedFiles.length} file(s)?`,
+  });
+
+  return confirmSelection ? selectedFiles : [];
 }
 
-// Prompt user for mood selection
+// Step 5: Prompt user for mood selection
 export async function promptForMoodSelection() {
   return await select({
     message: "How are you feeling about this commit?",
@@ -80,7 +96,7 @@ export async function promptForMoodSelection() {
   });
 }
 
-// Display commit success message
+// Step 6: Display commit success message
 export function showSuccessMessage() {
   outro(chalk.green.bold("✅ Commit successful!"));
 }

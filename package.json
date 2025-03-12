@@ -1,25 +1,40 @@
 {
   "name": "commit-vibes",
-  "version": "1.0.0",
-  "description": "A CLI tool to add ASCII vibes to your Git commit messages",
+  "version": "0.1.0",
+  "description": "A CLI tool to add vibes to your Git commit messages",
   "bin": {
     "commit-vibes": "./bin/commit-vibes.js"
   },
+  "type": "module",
   "scripts": {
     "start": "node bin/commit-vibes.js"
   },
-  "type": "module",
   "dependencies": {
     "@clack/prompts": "^0.3.0",
     "chalk": "^5.2.0",
-    "strip-ansi": "^7.1.0"
+    "strip-ansi": "^7.0.1"
+  },
+  "engines": {
+    "node": ">=16"
   },
   "keywords": [
-    "cli",
     "git",
     "commit",
-    "ascii",
-    "vibes"
+    "cli",
+    "git-commit",
+    "commit-message",
+    "developer-tools",
+    "dev-tools",
+    "cli-tool",
+    "workflow",
+    "automation",
+    "productivity",
+    "commit-vibes",
+    "vibes",
+    "emoji",
+    "mood",
+    "git-helper",
+    "fun"
   ],
   "author": "Your Name",
   "license": "MIT"
