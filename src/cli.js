@@ -3,6 +3,7 @@
 import { intro } from "@clack/prompts";
 import chalk from "chalk";
 import stripAnsi from "strip-ansi";
+import { Command } from "commander";
 import {
   getStagedFiles,
   stageAllChanges,
@@ -16,8 +17,40 @@ import {
   promptCommitMessage,
   showSuccessMessage,
 } from "./prompts.js";
+import { HEADER, HELP_CONTENT } from "./help-text.js";
+import { VIBES } from "./vibes.js";
+
+// Create program instance
+const program = new Command();
+
+// Setup program information
+program
+  .name("commit-vibes")
+  .description("A fun and interactive way to create git commits with vibes! 🎵")
+  .version("1.0.0")
+  .argument("[message]", "commit message (optional)")
+  .option("-l, --list-vibes", "list all available vibes")
+  .option("-c, --custom-vibe <path>", "path to custom vibes configuration file")
+  .addHelpText("beforeAll", HEADER)
+  .addHelpText("after", HELP_CONTENT);
 
 export async function runCLI() {
+  // Parse command line arguments
+  program.parse();
+  const options = program.opts();
+  const args = program.args;
+
+  // Handle --list-vibes option
+  if (options.listVibes) {
+    console.log(chalk.blue.bold("\nAvailable Vibes:"));
+    VIBES.forEach(({ value, hint }) => {
+      console.log(chalk.gray(`  ${value}`));
+      console.log(chalk.dim(`    ${hint}`));
+    });
+    console.log(); // Add empty line at end
+    process.exit(0);
+  }
+
   console.clear();
   intro(chalk.blue.bold("Welcome to Commit Vibes!"));
 
@@ -46,11 +79,10 @@ export async function runCLI() {
 
   // Get commit message from args or prompt
   let commitMessage;
-  const args = process.argv.slice(2);
 
   if (args.length > 0) {
     // Use message from command line
-    commitMessage = args.join(" ");
+    commitMessage = args[0];
   } else {
     // Prompt for commit message
     commitMessage = await promptCommitMessage();

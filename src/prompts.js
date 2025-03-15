@@ -93,12 +93,53 @@ export async function promptForFileSelection() {
     return [];
   }
 
-  // ✅ Ensure Clack does not crash on an empty selection
-  const selectedFiles =
-    (await multiselect({
-      message: "Select files to stage:",
-      options: unstagedFiles.map((file) => ({ value: file, label: file })),
-    })) ?? [];
+  // Use select instead of multiselect for now
+  const selectedFiles = [];
+  let continuing = true;
+
+  // Get remaining unselected files
+  const getRemainingFiles = () =>
+    unstagedFiles.filter((f) => !selectedFiles.includes(f));
+
+  while (continuing) {
+    const remainingFiles = getRemainingFiles();
+
+    const file = await select({
+      message: `Select files to stage (${selectedFiles.length} selected):`,
+      options: [
+        ...remainingFiles.map((file) => ({
+          value: file,
+          label: file,
+        })),
+        {
+          value: "__SELECT_ALL__",
+          label: "📦 Select All Remaining Files",
+          disabled: remainingFiles.length === 0,
+        },
+        { value: "__DONE__", label: "✅ Done selecting" },
+      ],
+    });
+
+    if (file === "__DONE__") {
+      continuing = false;
+    } else if (file === "__SELECT_ALL__") {
+      selectedFiles.push(...remainingFiles);
+      continuing = false;
+    } else {
+      selectedFiles.push(file);
+      // If all files are selected, end the selection
+      if (selectedFiles.length === unstagedFiles.length) {
+        continuing = false;
+      }
+    }
+
+    // Show current selection status
+    if (selectedFiles.length > 0) {
+      console.log(chalk.dim("\nSelected files:"));
+      selectedFiles.forEach((file) => console.log(chalk.dim(` - ${file}`)));
+      console.log();
+    }
+  }
 
   if (!Array.isArray(selectedFiles)) {
     console.log(chalk.yellow("⚠️ No files selected. Skipping staging."));
