@@ -13,6 +13,7 @@ import {
   promptForStagingChoice,
   promptForFileSelection,
   promptForMoodSelection,
+  promptCommitMessage,
   showSuccessMessage,
 } from "./prompts.js";
 
@@ -43,18 +44,19 @@ export async function runCLI() {
   console.log(chalk.green("\n📂 Staged files:"));
   console.log(chalk.gray(stagedFiles.map((file) => ` - ${file}`).join("\n")));
 
-  // Prompt for mood
-  const vibe = await promptForMoodSelection();
-
-  // Get commit message
-  const args = process.argv.slice(2);
-  if (!args.length) {
-    console.error(chalk.red.bold("❌ Error: No commit message provided!"));
+  // Prompt for commit message
+  const commitMessage = await promptCommitMessage();
+  if (!commitMessage) {
+    console.log(chalk.red("❌ Commit canceled."));
     process.exit(1);
   }
 
-  let commitMessage = args.join(" ") + ` ${chalk.green(vibe)}`;
-  const cleanCommitMessage = stripAnsi(commitMessage);
+  // Prompt for mood
+  const vibe = await promptForMoodSelection();
+
+  // Combine commit message with vibe
+  const finalMessage = `${commitMessage} ${chalk.green(vibe)}`;
+  const cleanCommitMessage = stripAnsi(finalMessage);
 
   console.log(chalk.blue.bold("\n📝 Final Commit Message:"));
   console.log(chalk.cyan(`"${cleanCommitMessage}"\n`));

@@ -1,6 +1,16 @@
 import { execSync } from "child_process";
 import chalk from "chalk";
 
+// Write Git Message to File
+export function writeGitMessageToFile(message) {
+  try {
+    execSync(`git commit -m "${message}"`, { stdio: "inherit" });
+  } catch (error) {
+    console.error(chalk.red("❌ Error writing git message to file."));
+    process.exit(1);
+  }
+}
+
 // Get staged files
 export function getStagedFiles() {
   try {

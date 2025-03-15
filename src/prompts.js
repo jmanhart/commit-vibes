@@ -1,4 +1,11 @@
-import { select, multiselect, confirm, intro, outro } from "@clack/prompts";
+import {
+  select,
+  multiselect,
+  confirm,
+  intro,
+  outro,
+  text,
+} from "@clack/prompts";
 import chalk from "chalk";
 import { getUnstagedFiles } from "./git-utils.js";
 import { VIBES } from "./vibes.js";
@@ -35,7 +42,17 @@ export async function promptForStagingChoice() {
   });
 }
 
-// Step 2: Ask if user wants to add more files
+// Asking the user for the commit message
+export async function promptCommitMessage() {
+  const message = await text({
+    message: "Enter your commit message:",
+    validate: (value) =>
+      value.trim() === "" ? "Commit message cannot be empty." : true,
+  });
+  return message;
+}
+
+// Step 2: Ask if user wants to add more files before committing
 export async function promptForAdditionalFiles() {
   return await select({
     message: "Would you like to add more files before committing?",
