@@ -43,9 +43,26 @@ Refactored API calls 😌 Feelin Confident
 2. Select a **mood** from the list:
    ```
    How are you feeling about this commit?
-   ✅ Feelin Confident 😌
-   ❓ Feelin Uncertain 🤔
-   🔥 Feelin Rushed 🔥
+   ● 😤 Frustrated (When debugging takes forever)
+   ○ 🎉 Victory
+   ○ 🤔 Questionable Commit
+   ○ 🔥 Big Energy
+   ○ 💀 It Works... Somehow
+   ○ 🚀 Shipped It
+   ○ 😅 Desperate Fix
+   ○ 🛠 Fixing Tech Debt
+   ○ 🤡 Hacky Fix
+   ○ ⏳ Waiting for CI
+   ○ 🫠 Melting Brain
+   ○ 🔄 Reverted Again
+   ○ ⚠️ Commit and Pray
+   ○ 🐛 Bug Fix... Maybe
+   ○ 🤯 Mind-Blown
+   ○ 🎶 Vibing
+   ○ 🕵️ Debugging Detective
+   ○ 🌙 Late Night Commit
+   ○ 🙃 What Am I Doing?
+   ○ 🧹 Cleaning Up
    ```
 3. Your commit will be saved with the selected vibe.
 
