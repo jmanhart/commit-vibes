@@ -73,19 +73,11 @@ Refactored API calls 😌 Feelin Confident
    ○ 🙃 What Am I Doing?
    ○ 🧹 Cleaning Up
    ```
-4. Your commit will be saved with the selected vibe.
-
-### **Handling Staging**
-
-If no files are staged, Commit Vibes will ask:
-
-```
-⚠️ No staged changes found!
-Would you like to stage changes before committing?
-✅ Yes, stage all changes
-📂 Select specific files to stage
-❌ No, cancel commit
-```
+4. Your commit will be saved with the selected vibe!
+   **Example**
+   ```
+   Doing some sick shit 💀 It Works... Somehow
+   ```
 
 ## 🤝 Contributing
 
