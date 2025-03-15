@@ -44,11 +44,20 @@ export async function runCLI() {
   console.log(chalk.green("\n📂 Staged files:"));
   console.log(chalk.gray(stagedFiles.map((file) => ` - ${file}`).join("\n")));
 
-  // Prompt for commit message
-  const commitMessage = await promptCommitMessage();
-  if (!commitMessage) {
-    console.log(chalk.red("❌ Commit canceled."));
-    process.exit(1);
+  // Get commit message from args or prompt
+  let commitMessage;
+  const args = process.argv.slice(2);
+
+  if (args.length > 0) {
+    // Use message from command line
+    commitMessage = args.join(" ");
+  } else {
+    // Prompt for commit message
+    commitMessage = await promptCommitMessage();
+    if (!commitMessage) {
+      console.log(chalk.red("❌ Commit canceled."));
+      process.exit(1);
+    }
   }
 
   // Prompt for mood

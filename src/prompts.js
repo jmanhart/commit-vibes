@@ -46,9 +46,17 @@ export async function promptForStagingChoice() {
 export async function promptCommitMessage() {
   const message = await text({
     message: "Enter your commit message:",
-    validate: (value) =>
-      value.trim() === "" ? "Commit message cannot be empty." : true,
+    validate: (value) => {
+      if (value.trim() === "") {
+        return "Commit message cannot be empty.";
+      }
+    },
   });
+
+  if (!message || message === "") {
+    return null;
+  }
+
   return message;
 }
 
