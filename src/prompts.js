@@ -60,7 +60,7 @@ export async function promptCommitMessage() {
   return message;
 }
 
-// Step 2: Ask if user wants to add more files before committing
+// Ask if user wants to add more files before committing
 export async function promptForAdditionalFiles() {
   return await select({
     message: "Would you like to add more files before committing?",
@@ -71,7 +71,7 @@ export async function promptForAdditionalFiles() {
   });
 }
 
-// Step 3: Show multi-select for unstaged files
+// Show multi-select for unstaged files
 export async function promptForFileSelection() {
   const unstagedFiles = getUnstagedFiles();
 
@@ -93,60 +93,34 @@ export async function promptForFileSelection() {
     return [];
   }
 
-  // Use select instead of multiselect for now
-  const selectedFiles = [];
-  let continuing = true;
-
-  // Get remaining unselected files
-  const getRemainingFiles = () =>
-    unstagedFiles.filter((f) => !selectedFiles.includes(f));
-
-  while (continuing) {
-    const remainingFiles = getRemainingFiles();
-
-    const file = await select({
-      message: `Select files to stage (${selectedFiles.length} selected):`,
-      options: [
-        ...remainingFiles.map((file) => ({
-          value: file,
-          label: file,
-        })),
-        {
-          value: "__SELECT_ALL__",
-          label: "📦 Select All Remaining Files",
-          disabled: remainingFiles.length === 0,
-        },
-        { value: "__DONE__", label: "✅ Done selecting" },
-      ],
-    });
-
-    if (file === "__DONE__") {
-      continuing = false;
-    } else if (file === "__SELECT_ALL__") {
-      selectedFiles.push(...remainingFiles);
-      continuing = false;
-    } else {
-      selectedFiles.push(file);
-      // If all files are selected, end the selection
-      if (selectedFiles.length === unstagedFiles.length) {
-        continuing = false;
-      }
-    }
-
-    // Show current selection status
-    if (selectedFiles.length > 0) {
-      console.log(chalk.dim("\nSelected files:"));
-      selectedFiles.forEach((file) => console.log(chalk.dim(` - ${file}`)));
-      console.log();
-    }
-  }
+  const selectedFiles = await multiselect({
+    message: "Select files to stage (space to select, enter to confirm):",
+    options: [
+      {
+        value: "__SELECT_ALL__",
+        label: "📦 Stage All Files",
+        hint: `(${unstagedFiles.length} files)`,
+      },
+      ...unstagedFiles.map((file) => ({
+        value: file,
+        label: file,
+      })),
+    ],
+    required: false,
+    initialValues: [],
+  });
 
   if (!Array.isArray(selectedFiles)) {
     console.log(chalk.yellow("⚠️ No files selected. Skipping staging."));
     return [];
   }
 
-  // Step 4: Confirm before staging
+  // Handle "Select All" option
+  if (selectedFiles.includes("__SELECT_ALL__")) {
+    return unstagedFiles;
+  }
+
+  // Confirm before staging
   const confirmSelection = await confirm({
     message: `Are you sure you want to stage ${selectedFiles.length} file(s)?`,
   });
@@ -154,7 +128,7 @@ export async function promptForFileSelection() {
   return confirmSelection ? selectedFiles : [];
 }
 
-// Step 5: Prompt user for mood selection
+// Prompt user for mood selection
 export async function promptForMoodSelection() {
   return await select({
     message: "How are you feeling about this commit?",
@@ -162,7 +136,7 @@ export async function promptForMoodSelection() {
   });
 }
 
-// Step 6: Display commit success message
+// Display commit success message
 export function showSuccessMessage() {
   outro(chalk.green.bold("✅ Commit successful!"));
 }
