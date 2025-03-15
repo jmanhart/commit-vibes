@@ -1,4 +1,4 @@
-# 🎸 Commit Vibes
+# Commit Vibes
 
 **Commit Vibes** is a CLI tool that lets you add **your mood** to every Git commit. Keep your commit history expressive, fun, and full of personality! 🎵🚀
 
@@ -24,9 +24,9 @@ You'll be prompted to pick a mood, and the commit will look something like:
 Refactored API calls 😌 Feelin Confident
 ```
 
-## 🎵 Features
+## Features
 
-✅ **Choose a mood before committing** – Pick how you feel about the code\
+✅ **Choose a mood before committing** – Pick how you feel about the code\ (TODO)
 ✅ **Staging check** – Avoid committing when no files are staged\ (WIP)
 ✅ **Stage files easily** – Select individual files or stage everything\ (WIP)
 ✅ **Fun, expressive commit history** – Make Git logs more human\
