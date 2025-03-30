@@ -135,6 +135,7 @@ export async function promptForFileSelection() {
 // Prompt user for mood selection
 export async function promptForMoodSelection() {
   const recentVibes = getRecentVibes();
+  console.log(chalk.dim("Found recent vibes:", recentVibes.length));
 
   // Create options with groups
   const options = [];
@@ -159,9 +160,14 @@ export async function promptForMoodSelection() {
 
   // Add all vibes except those in recent vibes
   const recentVibeValues = recentVibes.map((v) => v.value);
+  const allVibes = VIBES.filter(
+    (vibe) => !recentVibeValues.includes(vibe.value)
+  );
+  console.log(chalk.dim("Available all vibes:", allVibes.length));
+
   options.push({
     label: "All Vibes",
-    options: VIBES.filter((vibe) => !recentVibeValues.includes(vibe.value)),
+    options: allVibes,
   });
 
   return await select({

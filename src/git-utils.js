@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
 import chalk from "chalk";
+import { VIBES } from "./vibes.js";
 
 // Write Git Message to File
 export function writeGitMessageToFile(message) {
@@ -82,11 +83,8 @@ export function getRecentVibes() {
     // Extract vibes from commit messages
     const recentVibes = gitLog
       .map((message) => {
-        // Look for emoji at the end of the message
-        const emojiMatch = message.match(/\s([\u{1F300}-\u{1F9FF}][^ ]*)$/u);
-        if (!emojiMatch) return null;
-
-        const vibe = VIBES.find((v) => message.endsWith(v.value));
+        // Find any vibe that appears in the message
+        const vibe = VIBES.find((v) => message.includes(v.value));
         if (!vibe) return null;
 
         return {
@@ -96,7 +94,13 @@ export function getRecentVibes() {
       })
       .filter(Boolean); // Remove null entries
 
-    return recentVibes;
+    // Remove duplicates, keeping the most recent occurrence
+    const uniqueVibes = recentVibes.filter(
+      (vibe, index, self) =>
+        index === self.findIndex((v) => v.value === vibe.value)
+    );
+
+    return uniqueVibes;
   } catch (error) {
     console.error("Error getting recent vibes:", error);
     return [];
