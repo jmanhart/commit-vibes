@@ -2,7 +2,7 @@
 
 **Commit Vibes** is a CLI tool that lets you add **your mood** to every Git commit. Keep your commit history expressive, fun, and full of personality! 🎵🚀
 
-## 🚀 Installation
+## Installation
 
 Install globally via npm:
 
@@ -10,7 +10,7 @@ Install globally via npm:
 npm install -g commit-vibes
 ```
 
-## 🎭 How It Works
+### How It Works
 
 When making a commit, **Commit Vibes** asks you how you're feeling about it and appends your selected vibe to the message.
 
@@ -31,7 +31,7 @@ Refactored API calls 😌 Feelin Confident
 ✅ **Adding a commit message** – If you forget to add a message we got you covered
 ✅ **Fun, expressive commit history** – Make Git logs more human\
 
-## 🛠️ Usage
+## Usage
 
 ### **Making a Commit with Vibes**
 
@@ -79,11 +79,11 @@ Refactored API calls 😌 Feelin Confident
    Doing some sick shit 💀 It Works... Somehow
    ```
 
-## 🤝 Contributing
+## Contributing
 
 Pull requests are welcome! If you have cool ideas, **open an issue** or submit a PR. Let's make Git commit history more fun together!
 
-## 📜 License
+## License
 
 MIT License
 

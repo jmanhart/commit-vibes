@@ -135,27 +135,23 @@ export async function promptForFileSelection() {
 // Prompt user for mood selection
 export async function promptForMoodSelection() {
   const recentVibes = getRecentVibes();
-  console.log(chalk.dim("Found recent vibes:", recentVibes.length));
 
-  // Create options with groups
+  // Create a flat list of options
   const options = [];
 
-  // Add recent vibes group if any exist
+  // Add recent vibes if any exist
   if (recentVibes.length > 0) {
-    options.push({
-      label: "Recent Vibes",
-      options: recentVibes.map(({ value, timestamp }) => ({
-        value,
-        label: value,
-        hint: timestamp,
-      })),
-    });
-
-    // Add separator between groups
-    options.push({
-      label: "──────────────",
-      options: [],
-    });
+    // Add recent vibes with timestamps
+    options.push(
+      ...recentVibes.map(({ value, timestamp }) => {
+        const vibe = VIBES.find((v) => v.value === value);
+        return {
+          value,
+          label: value,
+          hint: `${vibe.hint} - Used ${timestamp}`,
+        };
+      })
+    );
   }
 
   // Add all vibes except those in recent vibes
@@ -163,12 +159,15 @@ export async function promptForMoodSelection() {
   const allVibes = VIBES.filter(
     (vibe) => !recentVibeValues.includes(vibe.value)
   );
-  console.log(chalk.dim("Available all vibes:", allVibes.length));
 
-  options.push({
-    label: "All Vibes",
-    options: allVibes,
-  });
+  // Add all vibes
+  options.push(
+    ...allVibes.map((vibe) => ({
+      value: vibe.value,
+      label: vibe.value,
+      hint: vibe.hint,
+    }))
+  );
 
   return await select({
     message: "How are you feeling about this commit?",

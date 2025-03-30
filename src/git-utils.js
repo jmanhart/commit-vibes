@@ -75,21 +75,22 @@ export function commitChanges(message) {
 
 export function getRecentVibes() {
   try {
-    // Get last 5 commits
-    const gitLog = execSync("git log -n 5 --pretty=format:'%s'", {
+    // Get last 5 commits with both message and hash
+    const gitLog = execSync("git log -n 5 --pretty=format:'%H|%s'", {
       encoding: "utf-8",
     }).split("\n");
 
     // Extract vibes from commit messages
     const recentVibes = gitLog
-      .map((message) => {
+      .map((line) => {
+        const [hash, message] = line.split("|");
         // Find any vibe that appears in the message
         const vibe = VIBES.find((v) => message.includes(v.value));
         if (!vibe) return null;
 
         return {
           value: vibe.value,
-          timestamp: getRelativeTime(message),
+          timestamp: getRelativeTime(hash),
         };
       })
       .filter(Boolean); // Remove null entries
@@ -107,9 +108,9 @@ export function getRecentVibes() {
   }
 }
 
-function getRelativeTime(commitMessage) {
+function getRelativeTime(commitHash) {
   try {
-    const commitTime = execSync(`git log -1 --format=%ct ${commitMessage}`, {
+    const commitTime = execSync(`git show -s --format=%ct ${commitHash}`, {
       encoding: "utf-8",
     }).trim();
 
