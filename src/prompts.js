@@ -7,7 +7,7 @@ import {
   text,
 } from "@clack/prompts";
 import chalk from "chalk";
-import { getUnstagedFiles } from "./git-utils.js";
+import { getUnstagedFiles, getRecentVibes } from "./git-utils.js";
 import { VIBES } from "./vibes.js";
 
 // Ask user if they want to stage changes
@@ -111,7 +111,11 @@ export async function promptForFileSelection() {
   });
 
   if (!Array.isArray(selectedFiles)) {
-    console.log(chalk.yellow("⚠️ No files selected. Skipping staging."));
+    console.log(
+      chalk.yellow(
+        "⚠️ No files selected. Skipping staging. Use space bar to select files, or choose 'Stage All Files' to stage everything."
+      )
+    );
     return [];
   }
 
@@ -130,9 +134,39 @@ export async function promptForFileSelection() {
 
 // Prompt user for mood selection
 export async function promptForMoodSelection() {
+  const recentVibes = getRecentVibes();
+
+  // Create options with groups
+  const options = [];
+
+  // Add recent vibes group if any exist
+  if (recentVibes.length > 0) {
+    options.push({
+      label: "Recent Vibes",
+      options: recentVibes.map(({ value, timestamp }) => ({
+        value,
+        label: value,
+        hint: timestamp,
+      })),
+    });
+
+    // Add separator between groups
+    options.push({
+      label: "──────────────",
+      options: [],
+    });
+  }
+
+  // Add all vibes except those in recent vibes
+  const recentVibeValues = recentVibes.map((v) => v.value);
+  options.push({
+    label: "All Vibes",
+    options: VIBES.filter((vibe) => !recentVibeValues.includes(vibe.value)),
+  });
+
   return await select({
     message: "How are you feeling about this commit?",
-    options: VIBES,
+    options: options,
   });
 }
 

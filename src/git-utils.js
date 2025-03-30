@@ -71,3 +71,53 @@ export function commitChanges(message) {
     process.exit(1);
   }
 }
+
+export function getRecentVibes() {
+  try {
+    // Get last 5 commits
+    const gitLog = execSync("git log -n 5 --pretty=format:'%s'", {
+      encoding: "utf-8",
+    }).split("\n");
+
+    // Extract vibes from commit messages
+    const recentVibes = gitLog
+      .map((message) => {
+        // Look for emoji at the end of the message
+        const emojiMatch = message.match(/\s([\u{1F300}-\u{1F9FF}][^ ]*)$/u);
+        if (!emojiMatch) return null;
+
+        const vibe = VIBES.find((v) => message.endsWith(v.value));
+        if (!vibe) return null;
+
+        return {
+          value: vibe.value,
+          timestamp: getRelativeTime(message),
+        };
+      })
+      .filter(Boolean); // Remove null entries
+
+    return recentVibes;
+  } catch (error) {
+    console.error("Error getting recent vibes:", error);
+    return [];
+  }
+}
+
+function getRelativeTime(commitMessage) {
+  try {
+    const commitTime = execSync(`git log -1 --format=%ct ${commitMessage}`, {
+      encoding: "utf-8",
+    }).trim();
+
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - parseInt(commitTime);
+
+    if (diff < 3600) return "just now";
+    if (diff < 7200) return "1 hour ago";
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    if (diff < 172800) return "yesterday";
+    return `${Math.floor(diff / 86400)} days ago`;
+  } catch (error) {
+    return "recently";
+  }
+}
