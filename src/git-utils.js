@@ -63,12 +63,14 @@ export function stageSelectedFiles(files) {
   }
 }
 
-// Run Git commit
+// Commit changes with message
 export function commitChanges(message) {
   try {
-    execSync(`git commit -m "${message}"`, { stdio: "inherit" });
+    // Escape the message for git commit
+    const escapedMessage = message.replace(/"/g, '\\"');
+    execSync(`git commit -m "${escapedMessage}"`, { stdio: "inherit" });
   } catch (error) {
-    console.error(chalk.red.bold("❌ Error running git commit."));
+    console.error(chalk.red("❌ Error running git commit."));
     process.exit(1);
   }
 }

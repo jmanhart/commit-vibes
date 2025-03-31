@@ -21,32 +21,33 @@ export function saveTokens(accessToken, refreshToken) {
   ensureDirectory();
   fs.writeFileSync(
     TOKEN_FILE,
-    JSON.stringify({
-      accessToken,
-      refreshToken,
-      timestamp: Date.now(),
-    })
+    JSON.stringify({ accessToken, refreshToken }, null, 2)
   );
 }
 
 // Load tokens from file
-export function loadTokens() {
-  if (!fs.existsSync(TOKEN_FILE)) {
-    return null;
-  }
+export function loadTokensFromStorage() {
   try {
-    const data = JSON.parse(fs.readFileSync(TOKEN_FILE, "utf8"));
-    return data;
+    if (fs.existsSync(TOKEN_FILE)) {
+      const data = JSON.parse(fs.readFileSync(TOKEN_FILE, "utf8"));
+      return {
+        access_token: data.accessToken,
+        refresh_token: data.refreshToken,
+      };
+    }
   } catch (error) {
-    return null;
+    console.error("Error loading tokens:", error);
   }
+  return null;
 }
 
-// Delete tokens
+// Delete tokens file
 export function deleteTokens() {
-  if (fs.existsSync(TOKEN_FILE)) {
-    fs.unlinkSync(TOKEN_FILE);
-    return true;
+  try {
+    if (fs.existsSync(TOKEN_FILE)) {
+      fs.unlinkSync(TOKEN_FILE);
+    }
+  } catch (error) {
+    console.error("Error deleting tokens:", error);
   }
-  return false;
 }

@@ -23,7 +23,9 @@ import {
   startAuthFlow,
   disconnectSpotify,
   getCurrentTrack,
+  loadTokens,
 } from "./spotify-auth.js";
+import { confirm } from "@clack/prompts";
 
 // Create program instance
 const program = new Command();
@@ -42,6 +44,9 @@ program
   .addHelpText("after", HELP_CONTENT);
 
 export async function runCLI() {
+  // Initialize Spotify tokens if they exist
+  await loadTokens();
+
   // Parse command line arguments
   program.parse();
   const options = program.opts();
@@ -149,16 +154,22 @@ export async function runCLI() {
   if (currentTrack) {
     console.log(chalk.blue("\n🎵 Now Playing:"));
     console.log(chalk.gray(`  ${currentTrack.name} - ${currentTrack.artist}`));
+
+    // Ask if user wants to include the song
+    const includeSong = await confirm({
+      message: "Add this song to your commit message?",
+    });
+
+    if (includeSong) {
+      commitMessage += `\n\n🎵 Now playing: "${currentTrack.name} - ${currentTrack.artist}"`;
+    }
   }
 
   // Prompt for mood
   const vibe = await promptForMoodSelection();
 
-  // Combine commit message with vibe and music
-  let finalMessage = `${commitMessage} ${chalk.green(vibe)}`;
-  if (currentTrack) {
-    finalMessage += `\n\n🎵 Now playing: "${currentTrack.name} - ${currentTrack.artist}"`;
-  }
+  // Combine commit message with vibe
+  const finalMessage = `${commitMessage} ${chalk.green(vibe)}`;
   const cleanCommitMessage = stripAnsi(finalMessage);
 
   console.log(chalk.blue.bold("\n📝 Final Commit Message:"));

@@ -3,7 +3,11 @@ import { SPOTIFY_CONFIG } from "./config/spotify.js";
 import open from "open";
 import http from "http";
 import { URL } from "url";
-import { saveTokens, loadTokens, deleteTokens } from "./spotify-tokens.js";
+import {
+  saveTokens,
+  deleteTokens,
+  loadTokensFromStorage,
+} from "./spotify-tokens.js";
 
 const spotifyApi = new SpotifyWebApi({
   clientId: SPOTIFY_CONFIG.clientId,
@@ -192,4 +196,15 @@ export async function disconnectSpotify() {
     console.error("Error disconnecting from Spotify:", error);
     return false;
   }
+}
+
+// Load tokens from storage
+export async function loadTokens() {
+  const tokens = await loadTokensFromStorage();
+  if (tokens) {
+    spotifyApi.setAccessToken(tokens.access_token);
+    spotifyApi.setRefreshToken(tokens.refresh_token);
+    return true;
+  }
+  return false;
 }
