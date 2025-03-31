@@ -19,6 +19,11 @@ import {
 } from "./prompts.js";
 import { HEADER, HELP_CONTENT } from "./help-text.js";
 import { VIBES } from "./vibes.js";
+import {
+  startAuthFlow,
+  disconnectSpotify,
+  getCurrentTrack,
+} from "./spotify-auth.js";
 
 // Create program instance
 const program = new Command();
@@ -31,6 +36,8 @@ program
   .argument("[message]", "commit message (optional)")
   .option("-l, --list-vibes", "list all available vibes")
   .option("-c, --custom-vibe <path>", "path to custom vibes configuration file")
+  .option("-s, --spotify", "connect your Spotify account")
+  .option("-d, --disconnect", "disconnect your Spotify account")
   .addHelpText("beforeAll", HEADER)
   .addHelpText("after", HELP_CONTENT);
 
@@ -49,6 +56,51 @@ export async function runCLI() {
     });
     console.log(); // Add empty line at end
     process.exit(0);
+  }
+
+  // Handle --spotify option
+  if (options.spotify) {
+    console.clear();
+    intro(chalk.blue.bold("Welcome to Commit Vibes!"));
+    console.log(chalk.yellow("\n🎵 Connecting to Spotify..."));
+    try {
+      await startAuthFlow();
+      console.log(chalk.green("\n✨ Successfully connected to Spotify!"));
+      console.log(
+        chalk.dim(
+          "Your music will now be included in commits when you're listening"
+        )
+      );
+      process.exit(0);
+    } catch (error) {
+      console.error(chalk.red("\n❌ Failed to connect to Spotify:"));
+      console.error(chalk.dim(error.message));
+      process.exit(1);
+    }
+  }
+
+  // Handle --disconnect option
+  if (options.disconnect) {
+    console.clear();
+    intro(chalk.blue.bold("Welcome to Commit Vibes!"));
+    console.log(chalk.yellow("\n🎵 Disconnecting from Spotify..."));
+    try {
+      const success = await disconnectSpotify();
+      if (success) {
+        console.log(
+          chalk.green("\n✨ Successfully disconnected from Spotify!")
+        );
+      } else {
+        console.log(
+          chalk.yellow("\nℹ️ No Spotify connection found to disconnect.")
+        );
+      }
+      process.exit(0);
+    } catch (error) {
+      console.error(chalk.red("\n❌ Failed to disconnect from Spotify:"));
+      console.error(chalk.dim(error.message));
+      process.exit(1);
+    }
   }
 
   console.clear();
@@ -92,11 +144,21 @@ export async function runCLI() {
     }
   }
 
+  // Get current playing track if Spotify is connected
+  const currentTrack = await getCurrentTrack();
+  if (currentTrack) {
+    console.log(chalk.blue("\n🎵 Now Playing:"));
+    console.log(chalk.gray(`  ${currentTrack.name} - ${currentTrack.artist}`));
+  }
+
   // Prompt for mood
   const vibe = await promptForMoodSelection();
 
-  // Combine commit message with vibe
-  const finalMessage = `${commitMessage} ${chalk.green(vibe)}`;
+  // Combine commit message with vibe and music
+  let finalMessage = `${commitMessage} ${chalk.green(vibe)}`;
+  if (currentTrack) {
+    finalMessage += `\n\n🎵 Now playing: "${currentTrack.name} - ${currentTrack.artist}"`;
+  }
   const cleanCommitMessage = stripAnsi(finalMessage);
 
   console.log(chalk.blue.bold("\n📝 Final Commit Message:"));
