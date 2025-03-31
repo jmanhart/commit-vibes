@@ -1,11 +1,7 @@
-import dotenv from "dotenv";
-import { config } from "dotenv";
-
-config(); // Load .env file
-
+// Spotify API configuration
 export const SPOTIFY_CONFIG = {
-  clientId: process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-  redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+  clientId: "aa9e79e2b7fa43f682840d6bde670088",
+  clientSecret: "c6cf4f29096843e9b00dc2577f78d9a4",
+  redirectUri: "http://localhost:3000",
   scopes: ["user-read-currently-playing", "user-read-recently-played"],
 };
