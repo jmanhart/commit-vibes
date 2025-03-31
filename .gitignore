@@ -1,6 +1,20 @@
-node_modules/
+# Spotify credentials
+src/config/
+
+# Environment variables
 .env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
 .DS_Store
+Thumbs.db
 *.log
 dist/
 coverage/
