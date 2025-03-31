@@ -1,6 +1,6 @@
 # Commit Vibes 🎵
 
-Add vibes and music to your commits! Because why not make your git history a bit more fun?
+Add vibes and music to your commits! Because why not make your git history a bit more fun!
 
 ## Features
 
