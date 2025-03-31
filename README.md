@@ -1,90 +1,64 @@
-# Commit Vibes
+# Commit Vibes 🎵
 
-**Commit Vibes** is a CLI tool that lets you add **your mood** to every Git commit. Keep your commit history expressive, fun, and full of personality! 🎵🚀
-
-## Installation
-
-Install globally via npm:
-
-```sh
-npm install -g commit-vibes
-```
-
-### How It Works
-
-When making a commit, **Commit Vibes** asks you how you're feeling about it and appends your selected vibe to the message.
-
-```sh
-commit-vibes "Your message"
-```
-
-You'll be prompted to pick a mood, and the commit will look something like:
-
-```
-Refactored API calls 😌 Feelin Confident
-```
+Add vibes and music to your commits! Because why not make your git history a bit more fun?
 
 ## Features
 
-✅ **Staging check** – Avoid committing when no files are staged\ (WIP)
-✅ **Stage files easily** – Select individual files or stage everything\ (WIP)
-✅ **Adding a commit message** – If you forget to add a message we got you covered
-✅ **Fun, expressive commit history** – Make Git logs more human\
+- 🎵 Spotify integration - add your current song to commits
+- 🎨 Express your commit feelings with emojis
+- 🎯 Quick file staging with multi-select
+- 🎮 Interactive CLI with Clack
+
+## Quick Start
+
+```bash
+# Install
+npm install -g commit-vibes
+
+# Connect Spotify (one-time setup)
+commit-vibes --spotify
+
+# Make a commit with vibes
+commit-vibes "your message"
+```
 
 ## Usage
 
-### **Making a Commit with Vibes**
+1. Stage your changes (or use `commit-vibes` to stage interactively)
+2. Enter your commit message
+3. Select your vibe
+4. If you're playing music, choose to include it in your commit
 
-1. Run:
-   ```sh
-   commit-vibes "Your commit message"
-   ```
-2. Handling Staging Step
+## Commands
 
-   ```
-   ⚠️ No staged changes found!
-   Would you like to stage changes before committing?
-   ✅ Yes, stage all changes
-   📂 Select specific files to stage
-   ❌ No, cancel commit
-   ```
+- `commit-vibes` - Interactive commit with vibes
+- `commit-vibes "message"` - Quick commit with message
+- `commit-vibes --spotify` - Connect Spotify
+- `commit-vibes --disconnect` - Disconnect Spotify
 
-3. Select a **mood** from the list:
-   ```
-   How are you feeling about this commit?
-   ● 😤 Frustrated (When debugging takes forever)
-   ○ 🎉 Victory
-   ○ 🤔 Questionable Commit
-   ○ 🔥 Big Energy
-   ○ 💀 It Works... Somehow
-   ○ 🚀 Shipped It
-   ○ 😅 Desperate Fix
-   ○ 🛠 Fixing Tech Debt
-   ○ 🤡 Hacky Fix
-   ○ ⏳ Waiting for CI
-   ○ 🫠 Melting Brain
-   ○ 🔄 Reverted Again
-   ○ ⚠️ Commit and Pray
-   ○ 🐛 Bug Fix... Maybe
-   ○ 🤯 Mind-Blown
-   ○ 🎶 Vibing
-   ○ 🕵️ Debugging Detective
-   ○ 🌙 Late Night Commit
-   ○ 🙃 What Am I Doing?
-   ○ 🧹 Cleaning Up
-   ```
-4. Your commit will be saved with the selected vibe!
-   **Example**
-   ```
-   Doing some sick shit 💀 It Works... Somehow
-   ```
+## Example Commit
 
-## Contributing
+```
+feat: add new feature 🎉 Victory
 
-Pull requests are welcome! If you have cool ideas, **open an issue** or submit a PR. Let's make Git commit history more fun together!
+🎵 Now playing: "Song Name - Artist Name"
+```
+
+## Development
+
+```bash
+# Clone & install
+git clone https://github.com/yourusername/commit-vibes.git
+cd commit-vibes
+npm install
+
+# Run locally
+npm link
+commit-vibes
+```
 
 ## License
 
-MIT License
+MIT
 
 ---
