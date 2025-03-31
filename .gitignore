@@ -1,5 +1,8 @@
 # Spotify credentials
-src/config/
+src/config/spotify.js
+
+# Battle plan
+battle-plan/
 
 # Environment variables
 .env
