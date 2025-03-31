@@ -41,8 +41,9 @@ function generateState() {
 
 // Refresh token if expired
 async function refreshTokenIfNeeded() {
+  let tokens;
   try {
-    const tokens = await loadTokensFromStorage();
+    tokens = await loadTokensFromStorage();
     if (!tokens) return false;
 
     spotifyApi.setAccessToken(tokens.access_token);
@@ -52,7 +53,7 @@ async function refreshTokenIfNeeded() {
     await spotifyApi.getMyCurrentPlayingTrack();
     return true;
   } catch (error) {
-    if (error.statusCode === 401) {
+    if (error.statusCode === 401 && tokens) {
       try {
         // Token expired, refresh it
         const data = await spotifyApi.refreshAccessToken();
