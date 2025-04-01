@@ -146,49 +146,66 @@ export async function startAuthFlow() {
   });
 }
 
+// Format relative time
+function formatRelativeTime(timestamp) {
+  const now = new Date();
+  const played = new Date(timestamp);
+  const diffInSeconds = Math.floor((now - played) / 1000);
+
+  if (diffInSeconds < 60) return "just now";
+  if (diffInSeconds < 3600) {
+    const mins = Math.floor(diffInSeconds / 60);
+    return `${mins} ${mins === 1 ? "min" : "mins"} ago`;
+  }
+  if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  }
+  const days = Math.floor(diffInSeconds / 86400);
+  return `${days} ${days === 1 ? "day" : "days"} ago`;
+}
+
 // Get currently playing track
 export async function getCurrentTrack() {
   try {
     // Check and refresh token if needed
     const isTokenValid = await refreshTokenIfNeeded();
     if (!isTokenValid) {
-      console.log(
-        chalk.yellow("Spotify token expired. Please reconnect with --spotify")
-      );
-      return null;
+      return { error: "auth" };
     }
 
     const data = await spotifyApi.getMyCurrentPlayingTrack();
     if (data.body && data.body.item) {
       return {
-        name: data.body.item.name,
-        artist: data.body.item.artists[0].name,
+        current: {
+          name: data.body.item.name,
+          artist: data.body.item.artists[0].name,
+        },
       };
     }
-    return null;
+
+    // No song playing, get recent tracks
+    const recentTracks = await getRecentTracks(3);
+    return {
+      current: null,
+      recent: recentTracks,
+    };
   } catch (error) {
-    console.error("Error getting current track:", error);
-    return null;
+    if (error.statusCode === 401) {
+      return { error: "auth" };
+    }
+    return { error: "api" };
   }
 }
 
 // Get recently played tracks
-export async function getRecentTracks(limit = 5) {
+export async function getRecentTracks(limit = 3) {
   try {
-    // Check and refresh token if needed
-    const isTokenValid = await refreshTokenIfNeeded();
-    if (!isTokenValid) {
-      console.log(
-        chalk.yellow("Spotify token expired. Please reconnect with --spotify")
-      );
-      return [];
-    }
-
     const data = await spotifyApi.getMyRecentlyPlayedTracks({ limit });
     return data.body.items.map((item) => ({
       name: item.track.name,
       artist: item.track.artists[0].name,
-      playedAt: item.played_at,
+      playedAt: formatRelativeTime(item.played_at),
     }));
   } catch (error) {
     console.error("Error getting recent tracks:", error);

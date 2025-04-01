@@ -149,27 +149,58 @@ export async function runCLI() {
     }
   }
 
+  // Get current playing track if Spotify is connected
+  const spotifyData = await getCurrentTrack();
+
+  if (spotifyData) {
+    if (spotifyData.error === "auth") {
+      console.log(
+        chalk.yellow("\nSpotify token expired. Please reconnect with --spotify")
+      );
+    } else if (spotifyData.current) {
+      console.log(chalk.blue("\n🎵 Now Playing:"));
+      console.log(
+        chalk.gray(
+          `  ${spotifyData.current.name} - ${spotifyData.current.artist}`
+        )
+      );
+
+      // Ask if user wants to include the song
+      const includeSong = await confirm({
+        message: "Add this song to your commit message?",
+      });
+
+      if (includeSong) {
+        commitMessage += `\n\n🎵 Now playing: "${spotifyData.current.name} - ${spotifyData.current.artist}"`;
+      }
+    } else if (spotifyData.recent && spotifyData.recent.length > 0) {
+      console.log(chalk.blue("\n🎵 No song currently playing"));
+      console.log(chalk.gray("Recent tracks:"));
+      spotifyData.recent.forEach((track) => {
+        console.log(
+          chalk.gray(
+            `  • "${track.name}" - ${track.artist} (${track.playedAt})`
+          )
+        );
+      });
+
+      // Ask if user wants to include the most recent song
+      const includeSong = await confirm({
+        message: "Add most recent song to your commit message?",
+      });
+
+      if (includeSong) {
+        const mostRecent = spotifyData.recent[0];
+        commitMessage += `\n\n🎵 Last played: "${mostRecent.name} - ${mostRecent.artist}"`;
+      }
+    }
+  }
+
   // Prompt for mood
   const vibe = await promptForMoodSelection();
 
   // Add vibe to the main message
   commitMessage = `${commitMessage} - ${chalk.green(vibe)}`;
-
-  // Get current playing track if Spotify is connected
-  const currentTrack = await getCurrentTrack();
-  if (currentTrack) {
-    console.log(chalk.blue("\n🎵 Now Playing:"));
-    console.log(chalk.gray(`  ${currentTrack.name} - ${currentTrack.artist}`));
-
-    // Ask if user wants to include the song
-    const includeSong = await confirm({
-      message: "Add this song to your commit message?",
-    });
-
-    if (includeSong) {
-      commitMessage += `\n\n🎵 Now playing: "${currentTrack.name} - ${currentTrack.artist}"`;
-    }
-  }
 
   const cleanCommitMessage = stripAnsi(commitMessage);
 
