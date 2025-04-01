@@ -149,6 +149,11 @@ export async function runCLI() {
     }
   }
 
+  // Prompt for mood first
+  const vibe = await promptForMoodSelection();
+  // Add vibe to the main message immediately
+  commitMessage = `${commitMessage} - ${chalk.green(vibe)}`;
+
   // Get current playing track if Spotify is connected
   const spotifyData = await getCurrentTrack();
 
@@ -195,12 +200,6 @@ export async function runCLI() {
       }
     }
   }
-
-  // Prompt for mood
-  const vibe = await promptForMoodSelection();
-
-  // Add vibe to the main message
-  commitMessage = `${commitMessage} - ${chalk.green(vibe)}`;
 
   const cleanCommitMessage = stripAnsi(commitMessage);
 
