@@ -17,11 +17,11 @@ function ensureDirectory() {
 }
 
 // Save tokens to file
-export function saveTokens(accessToken, refreshToken) {
+export function saveTokens({ access_token, refresh_token }) {
   ensureDirectory();
   fs.writeFileSync(
     TOKEN_FILE,
-    JSON.stringify({ accessToken, refreshToken }, null, 2)
+    JSON.stringify({ access_token, refresh_token }, null, 2)
   );
 }
 
@@ -31,8 +31,8 @@ export function loadTokensFromStorage() {
     if (fs.existsSync(TOKEN_FILE)) {
       const data = JSON.parse(fs.readFileSync(TOKEN_FILE, "utf8"));
       return {
-        access_token: data.accessToken,
-        refresh_token: data.refreshToken,
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
       };
     }
   } catch (error) {
