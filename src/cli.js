@@ -40,6 +40,7 @@ program
   .option("-c, --custom-vibe <path>", "path to custom vibes configuration file")
   .option("-s, --spotify", "connect your Spotify account")
   .option("-d, --disconnect", "disconnect your Spotify account")
+  .option("--status", "show if Spotify is connected")
   .addHelpText("beforeAll", HEADER)
   .addHelpText("after", HELP_CONTENT);
 
@@ -51,6 +52,50 @@ export async function runCLI() {
   program.parse();
   const options = program.opts();
   const args = program.args;
+
+  // Handle --status option
+  if (options.status) {
+    console.clear();
+    intro(chalk.blue.bold("Welcome to Commit Vibes!"));
+    console.log(chalk.yellow("\n🎵 Checking Spotify connection..."));
+
+    try {
+      const spotifyData = await getCurrentTrack();
+
+      if (!spotifyData) {
+        console.log(chalk.yellow("\nℹ️ Spotify is not connected."));
+        console.log(chalk.dim("Use --spotify to connect your account"));
+      } else if (spotifyData.error === "auth") {
+        console.log(chalk.red("\n❌ Spotify token has expired."));
+        console.log(chalk.dim("Please reconnect with --spotify"));
+      } else {
+        console.log(chalk.green("\n✨ Spotify is connected!"));
+
+        if (spotifyData.current) {
+          console.log(chalk.blue("\n🎵 Now Playing:"));
+          console.log(
+            chalk.gray(
+              `  ${spotifyData.current.name} - ${spotifyData.current.artist}`
+            )
+          );
+        } else if (spotifyData.recent && spotifyData.recent.length > 0) {
+          console.log(chalk.blue("\n🎵 No song currently playing"));
+          console.log(chalk.gray("Most recent track:"));
+          const mostRecent = spotifyData.recent[0];
+          console.log(
+            chalk.gray(
+              `  "${mostRecent.name}" - ${mostRecent.artist} (${mostRecent.playedAt})`
+            )
+          );
+        }
+      }
+      process.exit(0);
+    } catch (error) {
+      console.error(chalk.red("\n❌ Error checking Spotify status:"));
+      console.error(chalk.dim(error.message));
+      process.exit(1);
+    }
+  }
 
   // Handle --list-vibes option
   if (options.listVibes) {
