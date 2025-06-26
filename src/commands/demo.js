@@ -61,7 +61,11 @@ export async function handleDemo(args) {
       const includeSong = await confirm({
         message: "Add this song to your commit message?",
       });
-      exitIfCancelled(includeSong);
+      // Only exit if the user cancels (includeSong === undefined)
+      if (includeSong === undefined) {
+        console.log(chalk.red("❌ Commit canceled."));
+        process.exit(1);
+      }
       if (includeSong) {
         commitMessage += `\n\n🎵 Now playing: "${spotifyData.current.name} - ${spotifyData.current.artist}"`;
       }
@@ -71,7 +75,11 @@ export async function handleDemo(args) {
       const includeSong = await confirm({
         message: "Add most recent song to your commit message?",
       });
-      exitIfCancelled(includeSong);
+      // Only exit if the user cancels (includeSong === undefined)
+      if (includeSong === undefined) {
+        console.log(chalk.red("❌ Commit canceled."));
+        process.exit(1);
+      }
       if (includeSong) {
         const mostRecent = spotifyData.recent[0];
         commitMessage += `\n\n🎵 Last played: "${mostRecent.name} - ${mostRecent.artist}"`;
