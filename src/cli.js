@@ -1,31 +1,7 @@
 #!/usr/bin/env node
 
-import { intro } from "@clack/prompts";
-import chalk from "chalk";
-import stripAnsi from "strip-ansi";
 import { Command } from "commander";
-import {
-  getStagedFiles,
-  stageAllChanges,
-  stageSelectedFiles,
-  commitChanges,
-} from "./git-utils.js";
-import {
-  promptForStagingChoice,
-  promptForFileSelection,
-  promptForMoodSelection,
-  promptCommitMessage,
-  showSuccessMessage,
-} from "./prompts.js";
 import { HEADER, HELP_CONTENT } from "./help-text.js";
-import { VIBES } from "./vibes.js";
-import {
-  startAuthFlow,
-  disconnectSpotify,
-  getCurrentTrack,
-  loadTokens,
-} from "./spotify-auth.js";
-import { confirm } from "@clack/prompts";
 import { handleStatus } from "./commands/status.js";
 import { handleSpotifyConnect } from "./commands/spotify-connect.js";
 import { handleSpotifyDisconnect } from "./commands/spotify-disconnect.js";
@@ -52,9 +28,6 @@ program
   .addHelpText("after", HELP_CONTENT);
 
 export async function runCLI() {
-  // Initialize Spotify tokens if they exist
-  await loadTokens();
-
   // Parse command line arguments
   program.parse();
   const options = program.opts();

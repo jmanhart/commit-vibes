@@ -1,3 +1,8 @@
+/**
+ * Main commit flow handler for commit-vibes CLI.
+ * Handles staging, prompting, vibe selection, Spotify, and running the commit.
+ * @param {string[]} args - CLI arguments (commit message)
+ */
 import chalk from "chalk";
 import stripAnsi from "strip-ansi";
 import {
@@ -15,30 +20,37 @@ import {
 } from "../prompts.js";
 import { getCurrentTrack } from "../spotify-auth.js";
 import { confirm } from "@clack/prompts";
+import {
+  printStagedFiles,
+  printSpotifyTrack,
+  printRecentTracks,
+  showIntro,
+  exitIfCancelled,
+} from "../utils.js";
 
 export async function handleCommit(args) {
+  showIntro();
   // Check for staged files
   let stagedFiles = getStagedFiles();
 
   // If no staged files, prompt user
   if (!stagedFiles.length) {
     const stageChoice = await promptForStagingChoice();
-
+    exitIfCancelled(stageChoice);
     if (stageChoice === "yes") {
       stageAllChanges();
       stagedFiles = getStagedFiles();
     } else if (stageChoice === "select") {
       const selectedFiles = await promptForFileSelection();
+      exitIfCancelled(selectedFiles);
       stageSelectedFiles(selectedFiles);
       stagedFiles = getStagedFiles();
     } else {
-      console.log(chalk.red("❌ Commit canceled."));
-      process.exit(1);
+      exitIfCancelled(false);
     }
   }
 
-  console.log(chalk.green("\n📂 Staged files:"));
-  console.log(chalk.gray(stagedFiles.map((file) => ` - ${file}`).join("\n")));
+  printStagedFiles(stagedFiles);
 
   // Get commit message from args or prompt
   let commitMessage;
@@ -46,14 +58,12 @@ export async function handleCommit(args) {
     commitMessage = args[0];
   } else {
     commitMessage = await promptCommitMessage();
-    if (!commitMessage) {
-      console.log(chalk.red("❌ Commit canceled."));
-      process.exit(1);
-    }
+    exitIfCancelled(commitMessage);
   }
 
   // Prompt for mood first
   const vibe = await promptForMoodSelection();
+  exitIfCancelled(vibe);
   commitMessage = `${commitMessage} - ${chalk.green(vibe)}`;
 
   // Get current playing track if Spotify is connected
@@ -65,37 +75,23 @@ export async function handleCommit(args) {
         chalk.yellow("\nSpotify token expired. Please reconnect with --spotify")
       );
     } else if (spotifyData.current) {
-      console.log(chalk.blue("\n🎵 Now Playing:"));
-      console.log(
-        chalk.gray(
-          `  ${spotifyData.current.name} - ${spotifyData.current.artist}`
-        )
-      );
+      printSpotifyTrack(spotifyData.current);
 
       // Ask if user wants to include the song
       const includeSong = await confirm({
         message: "Add this song to your commit message?",
       });
-
+      exitIfCancelled(includeSong);
       if (includeSong) {
         commitMessage += `\n\n🎵 Now playing: "${spotifyData.current.name} - ${spotifyData.current.artist}"`;
       }
     } else if (spotifyData.recent && spotifyData.recent.length > 0) {
-      console.log(chalk.blue("\n🎵 No song currently playing"));
-      console.log(chalk.gray("Recent tracks:"));
-      spotifyData.recent.forEach((track) => {
-        console.log(
-          chalk.gray(
-            `  • "${track.name}" - ${track.artist} (${track.playedAt})`
-          )
-        );
-      });
-
+      printRecentTracks(spotifyData.recent);
       // Ask if user wants to include the most recent song
       const includeSong = await confirm({
         message: "Add most recent song to your commit message?",
       });
-
+      exitIfCancelled(includeSong);
       if (includeSong) {
         const mostRecent = spotifyData.recent[0];
         commitMessage += `\n\n🎵 Last played: "${mostRecent.name} - ${mostRecent.artist}"`;

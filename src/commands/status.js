@@ -1,10 +1,13 @@
+/**
+ * Status command handler for commit-vibes CLI.
+ * Shows Spotify connection status and current/recent track info.
+ */
 import chalk from "chalk";
-import { intro } from "@clack/prompts";
 import { getCurrentTrack } from "../spotify-auth.js";
+import { showIntro, handleError } from "../utils.js";
 
 export async function handleStatus() {
-  console.clear();
-  intro(chalk.blue.bold("Welcome to Commit Vibes!"));
+  showIntro();
   console.log(chalk.yellow("\n🎵 Checking Spotify connection..."));
 
   try {
@@ -39,8 +42,6 @@ export async function handleStatus() {
     }
     process.exit(0);
   } catch (error) {
-    console.error(chalk.red("\n❌ Error checking Spotify status:"));
-    console.error(chalk.dim(error.message));
-    process.exit(1);
+    handleError("\n❌ Error checking Spotify status:", error);
   }
 }

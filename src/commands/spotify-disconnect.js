@@ -1,10 +1,13 @@
+/**
+ * Spotify disconnect command handler for commit-vibes CLI.
+ * Handles disconnecting the user's Spotify account.
+ */
 import chalk from "chalk";
-import { intro } from "@clack/prompts";
 import { disconnectSpotify } from "../spotify-auth.js";
+import { showIntro, handleError } from "../utils.js";
 
 export async function handleSpotifyDisconnect() {
-  console.clear();
-  intro(chalk.blue.bold("Welcome to Commit Vibes!"));
+  showIntro();
   console.log(chalk.yellow("\n🎵 Disconnecting from Spotify..."));
   try {
     const success = await disconnectSpotify();
@@ -17,8 +20,6 @@ export async function handleSpotifyDisconnect() {
     }
     process.exit(0);
   } catch (error) {
-    console.error(chalk.red("\n❌ Failed to disconnect from Spotify:"));
-    console.error(chalk.dim(error.message));
-    process.exit(1);
+    handleError("\n❌ Failed to disconnect from Spotify:", error);
   }
 }

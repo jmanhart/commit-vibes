@@ -1,10 +1,13 @@
+/**
+ * Spotify connect command handler for commit-vibes CLI.
+ * Handles connecting the user's Spotify account.
+ */
 import chalk from "chalk";
-import { intro } from "@clack/prompts";
 import { startAuthFlow } from "../spotify-auth.js";
+import { showIntro, handleError } from "../utils.js";
 
 export async function handleSpotifyConnect() {
-  console.clear();
-  intro(chalk.blue.bold("Welcome to Commit Vibes!"));
+  showIntro();
   console.log(chalk.yellow("\n🎵 Connecting to Spotify..."));
   try {
     await startAuthFlow();
@@ -16,8 +19,6 @@ export async function handleSpotifyConnect() {
     );
     process.exit(0);
   } catch (error) {
-    console.error(chalk.red("\n❌ Failed to connect to Spotify:"));
-    console.error(chalk.dim(error.message));
-    process.exit(1);
+    handleError("\n❌ Failed to connect to Spotify:", error);
   }
 }
