@@ -41,6 +41,7 @@ program
   .option("-s, --spotify", "connect your Spotify account")
   .option("-d, --disconnect", "disconnect your Spotify account")
   .option("--status", "show if Spotify is connected")
+  .option("--demo", "run in demo mode (no real git or Spotify actions)")
   .addHelpText("beforeAll", HEADER)
   .addHelpText("after", HELP_CONTENT);
 
@@ -52,6 +53,13 @@ export async function runCLI() {
   program.parse();
   const options = program.opts();
   const args = program.args;
+
+  const isDemo = options.demo;
+  if (isDemo) {
+    console.log(
+      chalk.yellow("🚧 Running in DEMO mode! No changes will be made. 🚧")
+    );
+  }
 
   // Handle --status option
   if (options.status) {
@@ -156,23 +164,34 @@ export async function runCLI() {
   console.clear();
   intro(chalk.blue.bold("Welcome to Commit Vibes!"));
 
-  // Check for staged files
-  let stagedFiles = getStagedFiles();
+  // In demo mode, mock staged files
+  let stagedFiles;
+  if (isDemo) {
+    stagedFiles = ["src/index.js", "README.md"];
+  } else {
+    stagedFiles = getStagedFiles();
+  }
 
-  // If no staged files, prompt user
+  // If no staged files, prompt user (skip actual staging in demo)
   if (!stagedFiles.length) {
-    const stageChoice = await promptForStagingChoice();
-
-    if (stageChoice === "yes") {
-      stageAllChanges();
-      stagedFiles = getStagedFiles();
-    } else if (stageChoice === "select") {
-      const selectedFiles = await promptForFileSelection();
-      stageSelectedFiles(selectedFiles);
-      stagedFiles = getStagedFiles();
+    if (isDemo) {
+      stagedFiles = ["src/index.js", "README.md"];
+      console.log(
+        chalk.gray("(Demo) Mock staged files: src/index.js, README.md")
+      );
     } else {
-      console.log(chalk.red("❌ Commit canceled."));
-      process.exit(1);
+      const stageChoice = await promptForStagingChoice();
+      if (stageChoice === "yes") {
+        stageAllChanges();
+        stagedFiles = getStagedFiles();
+      } else if (stageChoice === "select") {
+        const selectedFiles = await promptForFileSelection();
+        stageSelectedFiles(selectedFiles);
+        stagedFiles = getStagedFiles();
+      } else {
+        console.log(chalk.red("❌ Commit canceled."));
+        process.exit(1);
+      }
     }
   }
 
@@ -181,12 +200,9 @@ export async function runCLI() {
 
   // Get commit message from args or prompt
   let commitMessage;
-
   if (args.length > 0) {
-    // Use message from command line
     commitMessage = args[0];
   } else {
-    // Prompt for commit message
     commitMessage = await promptCommitMessage();
     if (!commitMessage) {
       console.log(chalk.red("❌ Commit canceled."));
@@ -196,11 +212,27 @@ export async function runCLI() {
 
   // Prompt for mood first
   const vibe = await promptForMoodSelection();
-  // Add vibe to the main message immediately
   commitMessage = `${commitMessage} - ${chalk.green(vibe)}`;
 
-  // Get current playing track if Spotify is connected
-  const spotifyData = await getCurrentTrack();
+  // In demo mode, mock Spotify data
+  let spotifyData;
+  if (isDemo) {
+    spotifyData = {
+      current: {
+        name: "Demo Song",
+        artist: "Demo Artist",
+      },
+      recent: [
+        {
+          name: "Old Demo Song",
+          artist: "Old Demo Artist",
+          playedAt: "2 hours ago",
+        },
+      ],
+    };
+  } else {
+    spotifyData = await getCurrentTrack();
+  }
 
   if (spotifyData) {
     if (spotifyData.error === "auth") {
@@ -250,6 +282,11 @@ export async function runCLI() {
 
   console.log(chalk.blue.bold("\n📝 Final Commit Message:"));
   console.log(chalk.cyan(`"${cleanCommitMessage}"\n`));
+
+  if (isDemo) {
+    console.log(chalk.yellow("Demo mode: No commit was made."));
+    process.exit(0);
+  }
 
   // Run commit
   commitChanges(cleanCommitMessage);

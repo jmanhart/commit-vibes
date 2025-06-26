@@ -9,7 +9,7 @@ Add vibes and music to your commits! Because why not make your git history a bit
 - 🎯 Quick file staging with multi-select
 - 🎮 Interactive CLI with Clack
 
-## Quick Start
+## Quick Start NPM
 
 ```bash
 # Install
