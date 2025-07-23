@@ -3,94 +3,132 @@
  * Runs the CLI in demo mode with mock data and no real side effects.
  * @param {string[]} args - CLI arguments (commit message)
  */
+import { intro, outro } from "@clack/prompts";
 import chalk from "chalk";
-import stripAnsi from "strip-ansi";
-import { promptForMoodSelection, promptCommitMessage } from "../prompts.js";
-import { confirm } from "@clack/prompts";
 import {
+  promptCommitMessage,
+  promptForFileSelection,
+  promptForMoodSelection,
+} from "../prompts.js";
+import {
+  showIntro,
   printStagedFiles,
   printSpotifyTrack,
   printRecentTracks,
-  showIntro,
-  exitIfCancelled,
+  handleError,
+  checkCancellationState,
 } from "../utils.js";
 
 export async function handleDemo(args) {
-  showIntro();
-  console.log(
-    chalk.yellow("🚧 Running in DEMO mode! No changes will be made. 🚧")
-  );
+  try {
+    showIntro();
+    checkCancellationState();
 
-  // Mock staged files
-  let stagedFiles = ["src/index.js", "README.md"];
-  printStagedFiles(stagedFiles);
+    console.log(
+      chalk.yellow(
+        "🎭 DEMO MODE - No real git or Spotify actions will be performed\n"
+      )
+    );
 
-  // Get commit message from args or prompt
-  let commitMessage;
-  if (args.length > 0) {
-    commitMessage = args[0];
-  } else {
-    commitMessage = await promptCommitMessage();
-    exitIfCancelled(commitMessage);
-  }
+    // Mock staged files
+    const mockStagedFiles = ["src/demo.js", "README.md", "package.json"];
+    printStagedFiles(mockStagedFiles);
+    checkCancellationState();
 
-  // Prompt for mood first
-  const vibe = await promptForMoodSelection();
-  exitIfCancelled(vibe);
-  commitMessage = `${commitMessage} - ${chalk.green(vibe)}`;
-
-  // Mock Spotify data
-  const spotifyData = {
-    current: {
-      name: "Demo Song",
-      artist: "Demo Artist",
-    },
-    recent: [
-      {
-        name: "Old Demo Song",
-        artist: "Old Demo Artist",
-        playedAt: "2 hours ago",
-      },
-    ],
-  };
-
-  if (spotifyData) {
-    if (spotifyData.current) {
-      printSpotifyTrack(spotifyData.current);
-      // Ask if user wants to include the song
-      const includeSong = await confirm({
-        message: "Add this song to your commit message?",
-      });
-      // Only exit if the user cancels (includeSong === undefined)
-      if (includeSong === undefined) {
-        console.log(chalk.red("❌ Commit canceled."));
-        process.exit(1);
-      }
-      if (includeSong) {
-        commitMessage += `\n\n🎵 Now playing: "${spotifyData.current.name} - ${spotifyData.current.artist}"`;
-      }
-    } else if (spotifyData.recent && spotifyData.recent.length > 0) {
-      printRecentTracks(spotifyData.recent);
-      // Ask if user wants to include the most recent song
-      const includeSong = await confirm({
-        message: "Add most recent song to your commit message?",
-      });
-      // Only exit if the user cancels (includeSong === undefined)
-      if (includeSong === undefined) {
-        console.log(chalk.red("❌ Commit canceled."));
-        process.exit(1);
-      }
-      if (includeSong) {
-        const mostRecent = spotifyData.recent[0];
-        commitMessage += `\n\n🎵 Last played: "${mostRecent.name} - ${mostRecent.artist}"`;
-      }
+    // Get commit message (from args or prompt)
+    let message = args[0];
+    if (!message) {
+      message = await promptCommitMessage();
+      checkCancellationState();
     }
+
+    if (!message) {
+      console.log(chalk.red("❌ No commit message provided. Exiting."));
+      process.exit(1);
+    }
+
+    // Mock file selection (skip actual selection in demo)
+    console.log(chalk.cyan("📁 File selection skipped in demo mode"));
+    checkCancellationState();
+
+    // Select vibe
+    const vibe = await promptForMoodSelection();
+    checkCancellationState();
+
+    if (!vibe) {
+      console.log(chalk.red("❌ No vibe selected. Exiting."));
+      process.exit(1);
+    }
+
+    // Add vibe to message
+    message = `${message} ${vibe}`;
+
+    // Mock Spotify data
+    const mockSpotifyData = {
+      current: {
+        name: "Bohemian Rhapsody",
+        artist: "Queen",
+        album: "A Night at the Opera",
+      },
+      recent: [
+        {
+          name: "Hotel California",
+          artist: "Eagles",
+          album: "Hotel California",
+        },
+        {
+          name: "Stairway to Heaven",
+          artist: "Led Zeppelin",
+          album: "Led Zeppelin IV",
+        },
+        { name: "Imagine", artist: "John Lennon", album: "Imagine" },
+      ],
+    };
+
+    printSpotifyTrack(mockSpotifyData.current);
+    checkCancellationState();
+
+    // Ask if user wants to include the song
+    const { confirm } = await import("@clack/prompts");
+    const includeSong = await confirm({
+      message: "Add this song to your commit message?",
+    });
+    checkCancellationState();
+
+    // Only exit if the user cancels (includeSong === undefined)
+    if (includeSong === undefined) {
+      console.log(chalk.red("❌ Commit canceled."));
+      process.exit(1);
+    }
+
+    if (includeSong) {
+      message += `\n\n🎵 Now playing: "${mockSpotifyData.current.name} - ${mockSpotifyData.current.artist}"`;
+    }
+
+    // Show final commit message
+    console.log(chalk.cyan("\n📝 Final commit message (DEMO):"));
+    console.log(chalk.white(message));
+    console.log();
+
+    // Confirm commit
+    const shouldCommit = await confirm({
+      message: "Create this commit? (DEMO - no real commit)",
+    });
+    checkCancellationState();
+
+    if (shouldCommit === undefined) {
+      console.log(chalk.red("❌ Commit canceled."));
+      process.exit(1);
+    }
+
+    if (shouldCommit) {
+      console.log(chalk.green("🎉 Demo commit would be created!"));
+      console.log(chalk.gray("(No real git commit performed in demo mode)"));
+      outro(chalk.green("🎭 Demo completed successfully!"));
+    } else {
+      console.log(chalk.yellow("❌ Demo commit canceled."));
+    }
+  } catch (error) {
+    handleError(error);
   }
-
-  const cleanCommitMessage = stripAnsi(commitMessage);
-
-  console.log(chalk.blue.bold("\n📝 Final Commit Message:"));
-  console.log(chalk.cyan(`"${cleanCommitMessage}"\n`));
-  console.log(chalk.yellow("Demo mode: No commit was made."));
-  process.exit(0);
 }

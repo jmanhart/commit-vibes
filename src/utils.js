@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import { intro } from "@clack/prompts";
+import { checkCancellation, forceExit } from "./signal-handler.js";
 
 export function showIntro() {
   console.clear();
@@ -37,8 +38,15 @@ export function handleError(message, error) {
 }
 
 export function exitIfCancelled(value) {
-  if (!value) {
+  if (value === null || value === undefined) {
     console.log(chalk.red("❌ Commit canceled."));
     process.exit(1);
+  }
+}
+
+export function checkCancellationState() {
+  if (checkCancellation()) {
+    console.log(chalk.red("❌ Operation cancelled"));
+    forceExit();
   }
 }

@@ -9,6 +9,7 @@ import {
 import chalk from "chalk";
 import { getUnstagedFiles, getRecentVibes } from "./git-utils.js";
 import { VIBES } from "./vibes.js";
+import { checkCancellation, forceExit } from "./signal-handler.js";
 
 // Ask user if they want to stage changes
 export async function promptForStagingChoice() {
@@ -44,16 +45,17 @@ export async function promptForStagingChoice() {
 
 // Asking the user for the commit message
 export async function promptCommitMessage() {
+  if (checkCancellation()) {
+    console.log(chalk.red("❌ Operation cancelled"));
+    forceExit();
+  }
+
   const message = await text({
-    message: "Enter your commit message:",
-    validate: (value) => {
-      if (value.trim() === "") {
-        return "Commit message cannot be empty.";
-      }
-    },
+    message: "What's your commit message?",
+    placeholder: "e.g., fix: resolve login bug",
   });
 
-  if (!message || message === "") {
+  if (message === null || message === undefined) {
     return null;
   }
 
@@ -73,6 +75,11 @@ export async function promptForAdditionalFiles() {
 
 // Show multi-select for unstaged files
 export async function promptForFileSelection() {
+  if (checkCancellation()) {
+    console.log(chalk.red("❌ Operation cancelled"));
+    forceExit();
+  }
+
   const unstagedFiles = getUnstagedFiles();
 
   // ✅ Ensure unstagedFiles is always an array
@@ -134,17 +141,26 @@ export async function promptForFileSelection() {
 
 // Prompt user for mood selection
 export async function promptForMoodSelection() {
-  const recentVibes = getRecentVibes();
+  if (checkCancellation()) {
+    console.log(chalk.red("❌ Operation cancelled"));
+    forceExit();
+  }
 
-  // Create a flat list of options
+  const recentVibes = getRecentVibes();
   const options = [];
 
-  // Add recent vibes if any exist
   if (recentVibes.length > 0) {
-    // Add recent vibes with timestamps
     options.push(
       ...recentVibes.map(({ value, timestamp }) => {
         const vibe = VIBES.find((v) => v.value === value);
+        // Add null check to prevent Symbol conversion error
+        if (!vibe) {
+          return {
+            value,
+            label: value,
+            hint: `Used ${timestamp}`,
+          };
+        }
         return {
           value,
           label: value,
@@ -154,13 +170,11 @@ export async function promptForMoodSelection() {
     );
   }
 
-  // Add all vibes except those in recent vibes
   const recentVibeValues = recentVibes.map((v) => v.value);
   const allVibes = VIBES.filter(
     (vibe) => !recentVibeValues.includes(vibe.value)
   );
 
-  // Add all vibes
   options.push(
     ...allVibes.map((vibe) => ({
       value: vibe.value,
@@ -169,10 +183,22 @@ export async function promptForMoodSelection() {
     }))
   );
 
-  return await select({
-    message: "How are you feeling about this commit?",
-    options: options,
-  });
+  try {
+    const result = await select({
+      message: "How are you feeling about this commit?",
+      options: options,
+    });
+
+    if (result === null || result === undefined) {
+      return null;
+    }
+
+    return result;
+  } catch (error) {
+    // Handle Symbol conversion error gracefully
+    console.log(chalk.yellow("⚠️ Using default vibe due to prompt error"));
+    return "🎉 Victory";
+  }
 }
 
 // Display commit success message

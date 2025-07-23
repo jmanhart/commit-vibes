@@ -1,6 +1,10 @@
 import { execSync } from "child_process";
 import chalk from "chalk";
 import { VIBES } from "./vibes.js";
+import { checkCancellation, forceExit } from "./signal-handler.js";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 // Write Git Message to File
 export function writeGitMessageToFile(message) {
@@ -50,6 +54,8 @@ export function stageAllChanges() {
 
 // Stage selected files
 export function stageSelectedFiles(files) {
+  checkCancellation();
+
   if (!files || files.length === 0) {
     console.log(chalk.red("❌ No files selected. Cannot commit."));
     process.exit(1);
@@ -63,14 +69,49 @@ export function stageSelectedFiles(files) {
   }
 }
 
-// Commit changes with message
-export function commitChanges(message) {
+export function stageFiles(files) {
+  if (checkCancellation()) {
+    console.log(chalk.red("❌ Operation cancelled"));
+    forceExit();
+  }
+
+  if (files.length === 0) {
+    console.log(chalk.yellow("⚠️ No files to stage"));
+    return;
+  }
+
   try {
-    // Escape the message for git commit
-    const escapedMessage = message.replace(/"/g, '\\"');
-    execSync(`git commit -m "${escapedMessage}"`, { stdio: "inherit" });
+    execSync(`git add ${files.join(" ")}`);
+    console.log(chalk.green(`✅ Staged ${files.length} file(s)`));
   } catch (error) {
-    console.error(chalk.red("❌ Error running git commit."));
+    console.error(chalk.red("❌ Error staging files:"), error.message);
+    process.exit(1);
+  }
+}
+
+export async function commitChanges(message) {
+  if (checkCancellation()) {
+    console.log(chalk.red("❌ Operation cancelled"));
+    forceExit();
+  }
+
+  try {
+    // Use a different approach - write message to a file and use -F flag
+    // This avoids escaping issues with quotes and special characters
+
+    // Create a temporary file for the commit message
+    const tempFile = path.join(os.tmpdir(), `commit-msg-${Date.now()}.txt`);
+    fs.writeFileSync(tempFile, message);
+
+    // Use git commit with -F flag to read message from file
+    execSync(`git commit -F "${tempFile}"`);
+
+    // Clean up the temporary file
+    fs.unlinkSync(tempFile);
+
+    console.log(chalk.green("✅ Commit created successfully!"));
+  } catch (error) {
+    console.error(chalk.red("❌ Error creating commit:"), error.message);
     process.exit(1);
   }
 }

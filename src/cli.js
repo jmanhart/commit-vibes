@@ -8,6 +8,7 @@ import { handleSpotifyDisconnect } from "./commands/spotify-disconnect.js";
 import { handleListVibes } from "./commands/list-vibes.js";
 import { handleDemo } from "./commands/demo.js";
 import { handleCommit } from "./commands/commit.js";
+import "./signal-handler.js"; // Initialize signal handling
 
 // Create program instance
 const program = new Command();

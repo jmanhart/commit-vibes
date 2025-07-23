@@ -3,116 +3,132 @@
  * Handles staging, prompting, vibe selection, Spotify, and running the commit.
  * @param {string[]} args - CLI arguments (commit message)
  */
+import { intro, outro } from "@clack/prompts";
 import chalk from "chalk";
-import stripAnsi from "strip-ansi";
 import {
-  getStagedFiles,
-  stageAllChanges,
-  stageSelectedFiles,
-  commitChanges,
-} from "../git-utils.js";
-import {
-  promptForStagingChoice,
+  promptCommitMessage,
   promptForFileSelection,
   promptForMoodSelection,
-  promptCommitMessage,
-  showSuccessMessage,
 } from "../prompts.js";
+import { stageFiles, commitChanges, getUnstagedFiles } from "../git-utils.js";
 import { getCurrentTrack } from "../spotify-auth.js";
-import { confirm } from "@clack/prompts";
 import {
+  showIntro,
   printStagedFiles,
   printSpotifyTrack,
   printRecentTracks,
-  showIntro,
-  exitIfCancelled,
+  handleError,
+  checkCancellationState,
 } from "../utils.js";
 
 export async function handleCommit(args) {
-  showIntro();
-  // Check for staged files
-  let stagedFiles = getStagedFiles();
+  try {
+    showIntro();
+    checkCancellationState();
 
-  // If no staged files, prompt user
-  if (!stagedFiles.length) {
-    const stageChoice = await promptForStagingChoice();
-    exitIfCancelled(stageChoice);
-    if (stageChoice === "yes") {
-      stageAllChanges();
-      stagedFiles = getStagedFiles();
-    } else if (stageChoice === "select") {
+    // Get commit message (from args or prompt)
+    let message = args[0];
+    if (!message) {
+      message = await promptCommitMessage();
+      checkCancellationState();
+    }
+
+    if (!message) {
+      console.log(chalk.red("❌ No commit message provided. Exiting."));
+      process.exit(1);
+    }
+
+    // Check for unstaged files
+    const unstagedFiles = getUnstagedFiles();
+    if (unstagedFiles.length > 0) {
       const selectedFiles = await promptForFileSelection();
-      exitIfCancelled(selectedFiles);
-      stageSelectedFiles(selectedFiles);
-      stagedFiles = getStagedFiles();
+      checkCancellationState();
+
+      if (selectedFiles.length > 0) {
+        stageFiles(selectedFiles);
+        checkCancellationState();
+      }
+    }
+
+    // Select vibe
+    const vibe = await promptForMoodSelection();
+    checkCancellationState();
+
+    if (!vibe) {
+      console.log(chalk.red("❌ No vibe selected. Exiting."));
+      process.exit(1);
+    }
+
+    // Add vibe to message
+    message = `${message} ${vibe}`;
+
+    // Check Spotify for current track
+    const spotifyData = await getCurrentTrack();
+    checkCancellationState();
+
+    if (spotifyData && !spotifyData.error) {
+      if (spotifyData.current) {
+        printSpotifyTrack(spotifyData.current);
+
+        const { confirm } = await import("@clack/prompts");
+        const includeSong = await confirm({
+          message: "Add this song to your commit message?",
+        });
+        checkCancellationState();
+
+        if (includeSong === undefined) {
+          console.log(chalk.red("❌ Commit canceled."));
+          process.exit(1);
+        }
+
+        if (includeSong) {
+          message += `\n\n🎵 Now playing: "${spotifyData.current.name} - ${spotifyData.current.artist}"`;
+        }
+      } else if (spotifyData.recent && spotifyData.recent.length > 0) {
+        printRecentTracks(spotifyData.recent);
+
+        const { confirm } = await import("@clack/prompts");
+        const includeSong = await confirm({
+          message: "Add most recent song to your commit message?",
+        });
+        checkCancellationState();
+
+        if (includeSong === undefined) {
+          console.log(chalk.red("❌ Commit canceled."));
+          process.exit(1);
+        }
+
+        if (includeSong) {
+          const mostRecent = spotifyData.recent[0];
+          message += `\n\n🎵 Last played: "${mostRecent.name} - ${mostRecent.artist}"`;
+        }
+      }
+    }
+
+    // Show final commit message
+    console.log(chalk.cyan("\n📝 Final commit message:"));
+    console.log(chalk.white(message));
+    console.log();
+
+    // Confirm commit
+    const { confirm } = await import("@clack/prompts");
+    const shouldCommit = await confirm({
+      message: "Create this commit?",
+    });
+    checkCancellationState();
+
+    if (shouldCommit === undefined) {
+      console.log(chalk.red("❌ Commit canceled."));
+      process.exit(1);
+    }
+
+    if (shouldCommit) {
+      await commitChanges(message);
+      outro(chalk.green("🎉 Commit created successfully!"));
     } else {
-      exitIfCancelled(false);
+      console.log(chalk.yellow("❌ Commit canceled."));
     }
+  } catch (error) {
+    handleError(error);
   }
-
-  printStagedFiles(stagedFiles);
-
-  // Get commit message from args or prompt
-  let commitMessage;
-  if (args.length > 0) {
-    commitMessage = args[0];
-  } else {
-    commitMessage = await promptCommitMessage();
-    exitIfCancelled(commitMessage);
-  }
-
-  // Prompt for mood first
-  const vibe = await promptForMoodSelection();
-  exitIfCancelled(vibe);
-  commitMessage = `${commitMessage} - ${chalk.green(vibe)}`;
-
-  // Get current playing track if Spotify is connected
-  const spotifyData = await getCurrentTrack();
-
-  if (spotifyData) {
-    if (spotifyData.error === "auth") {
-      console.log(
-        chalk.yellow("\nSpotify token expired. Please reconnect with --spotify")
-      );
-    } else if (spotifyData.current) {
-      printSpotifyTrack(spotifyData.current);
-
-      // Ask if user wants to include the song
-      const includeSong = await confirm({
-        message: "Add this song to your commit message?",
-      });
-      // Only exit if the user cancels (includeSong === undefined)
-      if (includeSong === undefined) {
-        console.log(chalk.red("❌ Commit canceled."));
-        process.exit(1);
-      }
-      if (includeSong) {
-        commitMessage += `\n\n🎵 Now playing: "${spotifyData.current.name} - ${spotifyData.current.artist}"`;
-      }
-    } else if (spotifyData.recent && spotifyData.recent.length > 0) {
-      printRecentTracks(spotifyData.recent);
-      // Ask if user wants to include the most recent song
-      const includeSong = await confirm({
-        message: "Add most recent song to your commit message?",
-      });
-      // Only exit if the user cancels (includeSong === undefined)
-      if (includeSong === undefined) {
-        console.log(chalk.red("❌ Commit canceled."));
-        process.exit(1);
-      }
-      if (includeSong) {
-        const mostRecent = spotifyData.recent[0];
-        commitMessage += `\n\n🎵 Last played: "${mostRecent.name} - ${mostRecent.artist}"`;
-      }
-    }
-  }
-
-  const cleanCommitMessage = stripAnsi(commitMessage);
-
-  console.log(chalk.blue.bold("\n📝 Final Commit Message:"));
-  console.log(chalk.cyan(`"${cleanCommitMessage}"\n`));
-
-  // Run commit
-  commitChanges(cleanCommitMessage);
-  showSuccessMessage();
 }
