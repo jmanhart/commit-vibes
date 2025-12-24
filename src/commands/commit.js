@@ -129,6 +129,6 @@ export async function handleCommit(args) {
       console.log(chalk.yellow("❌ Commit canceled."));
     }
   } catch (error) {
-    handleError(error);
+    handleError("❌ An error occurred during commit:", error);
   }
 }

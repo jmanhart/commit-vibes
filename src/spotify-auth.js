@@ -1,8 +1,11 @@
 import SpotifyWebApi from "spotify-web-api-node";
-import { SPOTIFY_CONFIG } from "./config/spotify.js";
 import open from "open";
 import http from "http";
 import { URL } from "url";
+import { existsSync, readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import dotenv from "dotenv";
 import {
   saveTokens,
   deleteTokens,
@@ -10,17 +13,108 @@ import {
 } from "./spotify-tokens.js";
 import chalk from "chalk";
 
-const spotifyApi = new SpotifyWebApi({
-  clientId: SPOTIFY_CONFIG.clientId,
-  clientSecret: SPOTIFY_CONFIG.clientSecret,
-  redirectUri: SPOTIFY_CONFIG.redirectUri,
-});
+// Load environment variables from .env file (if it exists)
+dotenv.config();
 
-// Load existing tokens if available
-const existingTokens = loadTokens();
-if (existingTokens) {
-  spotifyApi.setAccessToken(existingTokens.accessToken);
-  spotifyApi.setRefreshToken(existingTokens.refreshToken);
+// Get the directory of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load Spotify config with error handling (lazy loading)
+let SPOTIFY_CONFIG = null;
+let spotifyApi = null;
+let configLoadAttempted = false;
+
+// Lazy load Spotify configuration (only when needed)
+// Supports both .env file and config/spotify.js file
+async function loadSpotifyConfig() {
+  // Only try to load once
+  if (configLoadAttempted) {
+    return SPOTIFY_CONFIG !== null;
+  }
+  
+  configLoadAttempted = true;
+  
+  // First, try to load from environment variables (.env file)
+  const envClientId = process.env.SPOTIFY_CLIENT_ID;
+  const envClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const envRedirectUri = process.env.SPOTIFY_REDIRECT_URI || "http://localhost:3000";
+  
+  if (envClientId && envClientSecret) {
+    // Use environment variables
+    SPOTIFY_CONFIG = {
+      clientId: envClientId,
+      clientSecret: envClientSecret,
+      redirectUri: envRedirectUri,
+    };
+    
+    spotifyApi = new SpotifyWebApi({
+      clientId: SPOTIFY_CONFIG.clientId,
+      clientSecret: SPOTIFY_CONFIG.clientSecret,
+      redirectUri: SPOTIFY_CONFIG.redirectUri,
+    });
+
+    // Load existing tokens if available
+    const existingTokens = await loadTokensFromStorage();
+    if (existingTokens) {
+      spotifyApi.setAccessToken(existingTokens.access_token);
+      spotifyApi.setRefreshToken(existingTokens.refresh_token);
+    }
+    
+    return true;
+  }
+  
+  // If not in .env, try to load from config file
+  const configPath = join(__dirname, "config", "spotify.js");
+  
+  // Check if config file exists
+  if (!existsSync(configPath)) {
+    // Neither .env nor config file exists - Spotify is not configured
+    // This is fine, the tool can work without Spotify
+    return false;
+  }
+
+  try {
+    // Read and evaluate the config file manually to avoid ES module resolution issues
+    const configContent = readFileSync(configPath, "utf-8");
+    
+    // Extract the SPOTIFY_CONFIG export using regex
+    // This is safer than eval and avoids module resolution issues
+    const configMatch = configContent.match(/export\s+const\s+SPOTIFY_CONFIG\s*=\s*({[\s\S]*?});/);
+    
+    if (!configMatch || !configMatch[1]) {
+      return false;
+    }
+    
+    // Safely evaluate the config object
+    // Using Function constructor is safer than eval for this use case
+    const configObj = new Function(`return ${configMatch[1]}`)();
+    
+    SPOTIFY_CONFIG = configObj;
+    
+    if (!SPOTIFY_CONFIG || !SPOTIFY_CONFIG.clientId || !SPOTIFY_CONFIG.clientSecret) {
+      return false;
+    }
+    
+    spotifyApi = new SpotifyWebApi({
+      clientId: SPOTIFY_CONFIG.clientId,
+      clientSecret: SPOTIFY_CONFIG.clientSecret,
+      redirectUri: SPOTIFY_CONFIG.redirectUri,
+    });
+
+    // Load existing tokens if available
+    const existingTokens = await loadTokensFromStorage();
+    if (existingTokens) {
+      spotifyApi.setAccessToken(existingTokens.access_token);
+      spotifyApi.setRefreshToken(existingTokens.refresh_token);
+    }
+    
+    return true;
+  } catch (error) {
+    // Handle all errors gracefully - file read errors, syntax errors, etc.
+    // This is fine, Spotify is optional
+    return false;
+  }
 }
 
 // Generate random state for security
@@ -34,6 +128,33 @@ function generateRandomString(length) {
   return text;
 }
 
+// Check if Spotify is configured (with helpful error message)
+async function ensureSpotifyConfigured() {
+  // Try to load config if not already attempted
+  const isConfigured = await loadSpotifyConfig();
+  
+  if (!isConfigured || !SPOTIFY_CONFIG || !spotifyApi) {
+    const configPath = join(__dirname, "config", "spotify.js");
+    const templatePath = join(__dirname, "config", "spotify.template.js");
+    const errorMessage = 
+      `\n❌ Spotify is not configured!\n\n` +
+      `To use Spotify features, you need to configure Spotify credentials.\n\n` +
+      `Option 1: Use environment variables (recommended)\n` +
+      `  Add to your .env file:\n` +
+      `    SPOTIFY_CLIENT_ID=your_client_id\n` +
+      `    SPOTIFY_CLIENT_SECRET=your_client_secret\n` +
+      `    SPOTIFY_REDIRECT_URI=http://localhost:3000\n\n` +
+      `Option 2: Use config file\n` +
+      `  1. Copy the template file:\n` +
+      `     cp "${templatePath}" "${configPath}"\n\n` +
+      `  2. Edit ${configPath} and add your Spotify API credentials.\n\n` +
+      `Get credentials from: https://developer.spotify.com/dashboard\n\n` +
+      `Note: You can use commit-vibes without Spotify - it's optional!\n`;
+    
+    throw new Error(errorMessage);
+  }
+}
+
 // Generate a random state string
 function generateState() {
   return Math.random().toString(36).substring(7);
@@ -41,6 +162,7 @@ function generateState() {
 
 // Refresh token if expired
 async function refreshTokenIfNeeded() {
+  await ensureSpotifyConfigured();
   let tokens;
   try {
     tokens = await loadTokensFromStorage();
@@ -75,6 +197,7 @@ async function refreshTokenIfNeeded() {
 
 // Start the auth flow
 export async function startAuthFlow() {
+  await ensureSpotifyConfigured();
   const state = generateRandomString(16);
   const scopes = ["user-read-currently-playing", "user-read-recently-played"];
 
@@ -216,6 +339,14 @@ function formatRelativeTime(timestamp) {
 
 // Get currently playing track
 export async function getCurrentTrack() {
+  // Try to load config, but don't throw error if not configured
+  const isConfigured = await loadSpotifyConfig();
+  
+  if (!isConfigured || !spotifyApi) {
+    // Spotify not configured - return null to indicate no Spotify data
+    return null;
+  }
+  
   try {
     // Check and refresh token if needed
     const isTokenValid = await refreshTokenIfNeeded();
@@ -249,6 +380,14 @@ export async function getCurrentTrack() {
 
 // Get recently played tracks
 export async function getRecentTracks(limit = 3) {
+  // Try to load config, but don't throw error if not configured
+  const isConfigured = await loadSpotifyConfig();
+  
+  if (!isConfigured || !spotifyApi) {
+    // Spotify not configured - return empty array
+    return [];
+  }
+  
   try {
     const data = await spotifyApi.getMyRecentlyPlayedTracks({ limit });
     return data.body.items.map((item) => ({
@@ -264,6 +403,11 @@ export async function getRecentTracks(limit = 3) {
 
 // Disconnect from Spotify
 export async function disconnectSpotify() {
+  if (!spotifyApi) {
+    // If not configured, tokens might still exist, so try to delete them
+    await deleteTokens();
+    return true;
+  }
   try {
     await deleteTokens();
     spotifyApi.setAccessToken(null);
@@ -277,6 +421,7 @@ export async function disconnectSpotify() {
 
 // Load tokens from storage
 export async function loadTokens() {
+  if (!spotifyApi) return false;
   const tokens = await loadTokensFromStorage();
   if (tokens) {
     spotifyApi.setAccessToken(tokens.access_token);

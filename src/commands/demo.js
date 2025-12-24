@@ -129,6 +129,6 @@ export async function handleDemo(args) {
       console.log(chalk.yellow("❌ Demo commit canceled."));
     }
   } catch (error) {
-    handleError(error);
+    handleError("❌ An error occurred during demo:", error);
   }
 }
