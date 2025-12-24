@@ -7,7 +7,7 @@ Add vibes and music to your commits! Because why not make your git history a bit
 - 🎵 Spotify integration - add your current song to commits
 - 🎨 Express your commit feelings with emojis
 - 🎯 Quick file staging with multi-select
-- 🎮 Interactive CLI with Clack
+- 🎮 Interactive CLI with Clack!
 
 ## Quick Start NPM
 
