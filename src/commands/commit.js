@@ -10,7 +10,12 @@ import {
   promptForFileSelection,
   promptForMoodSelection,
 } from "../prompts.js";
-import { stageFiles, commitChanges, getUnstagedFiles } from "../git-utils.js";
+import {
+  stageFiles,
+  commitChanges,
+  getUnstagedFiles,
+  getStagedFiles,
+} from "../git-utils.js";
 import { getCurrentTrack } from "../spotify-auth.js";
 import {
   showIntro,
@@ -123,6 +128,18 @@ export async function handleCommit(args) {
     }
 
     if (shouldCommit) {
+      // Double-check that there are staged files before committing
+      const stagedFiles = getStagedFiles();
+      if (stagedFiles.length === 0) {
+        console.log(chalk.red("\n❌ No files staged for commit."));
+        console.log(
+          chalk.yellow(
+            "💡 Stage files first using 'git add' or select files during the commit process."
+          )
+        );
+        process.exit(1);
+      }
+
       await commitChanges(message);
       outro(chalk.green("🎉 Commit created successfully!"));
     } else {

@@ -95,23 +95,64 @@ export async function commitChanges(message) {
     forceExit();
   }
 
+  // Check if there are any staged files
+  const stagedFiles = getStagedFiles();
+  if (stagedFiles.length === 0) {
+    console.error(chalk.red("❌ No files staged for commit."));
+    console.log(chalk.yellow("💡 Tip: Stage files first using 'git add' or select files during the commit process."));
+    process.exit(1);
+  }
+
+  // Create a temporary file for the commit message
+  const tempFile = path.join(os.tmpdir(), `commit-msg-${Date.now()}.txt`);
+  
   try {
     // Use a different approach - write message to a file and use -F flag
     // This avoids escaping issues with quotes and special characters
-
-    // Create a temporary file for the commit message
-    const tempFile = path.join(os.tmpdir(), `commit-msg-${Date.now()}.txt`);
     fs.writeFileSync(tempFile, message);
 
-    // Use git commit with -F flag to read message from file
-    execSync(`git commit -F "${tempFile}"`);
+    try {
+      // Use git commit with -F flag to read message from file
+      // Capture both stdout and stderr to show actual git messages
+      const output = execSync(`git commit -F "${tempFile}"`, { 
+        encoding: 'utf-8',
+        stdio: 'pipe'
+      });
+      
+      // Show git output if any
+      if (output) {
+        console.log(output.trim());
+      }
+    } catch (gitError) {
+      // Extract the actual error message from git
+      const errorOutput = gitError.stderr?.toString() || gitError.stdout?.toString() || gitError.message;
+      throw new Error(errorOutput);
+    }
 
     // Clean up the temporary file
     fs.unlinkSync(tempFile);
 
     console.log(chalk.green("✅ Commit created successfully!"));
   } catch (error) {
-    console.error(chalk.red("❌ Error creating commit:"), error.message);
+    // Clean up temp file if it exists
+    try {
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    } catch (cleanupError) {
+      // Ignore cleanup errors
+    }
+
+    const errorMessage = error.message || error.toString();
+    console.error(chalk.red("❌ Error creating commit:"));
+    console.error(chalk.red(errorMessage));
+    
+    // Check for common git errors and provide helpful messages
+    if (errorMessage.includes("nothing to commit") || errorMessage.includes("no changes added to commit")) {
+      console.log(chalk.yellow("\n💡 No changes staged for commit."));
+      console.log(chalk.yellow("   Stage files first using 'git add' or select files during the commit process."));
+    }
+    
     process.exit(1);
   }
 }
