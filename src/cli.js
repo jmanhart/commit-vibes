@@ -7,6 +7,7 @@ import { handleSpotifyConnect } from "./commands/spotify-connect.js";
 import { handleSpotifyDisconnect } from "./commands/spotify-disconnect.js";
 import { handleListVibes } from "./commands/list-vibes.js";
 import { handleDemo } from "./commands/demo.js";
+import { handlePreview } from "./commands/preview.js";
 import { handleCommit } from "./commands/commit.js";
 import "./signal-handler.js"; // Initialize signal handling
 
@@ -25,6 +26,7 @@ program
   .option("-d, --disconnect", "disconnect your Spotify account")
   .option("--status", "show if Spotify is connected")
   .option("--demo", "run in demo mode (no real git or Spotify actions)")
+  .option("--preview", "preview commit with real git and Spotify data (no commit created)")
   .addHelpText("beforeAll", HEADER)
   .addHelpText("after", HELP_CONTENT);
 
@@ -52,6 +54,10 @@ export async function runCLI() {
   }
   if (options.demo) {
     await handleDemo(args);
+    return;
+  }
+  if (options.preview) {
+    await handlePreview(args);
     return;
   }
   await handleCommit(args);

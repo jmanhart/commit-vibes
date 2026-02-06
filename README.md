@@ -35,6 +35,7 @@ commit-vibes "your message"
 - `commit-vibes "message"` - Quick commit with message
 - `commit-vibes --spotify` - Connect Spotify
 - `commit-vibes --disconnect` - Disconnect Spotify
+- `commit-vibes --preview` - Preview commit with real git and Spotify data (no commit created)
 
 ## Example Commit
 
