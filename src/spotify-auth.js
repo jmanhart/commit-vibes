@@ -13,12 +13,16 @@ import {
 } from "./spotify-tokens.js";
 import chalk from "chalk";
 
-// Load environment variables from .env file (if it exists)
-dotenv.config();
-
 // Get the directory of the current module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load environment variables from .env file (if it exists)
+// Try to load from project root (where package.json is)
+const envPath = join(__dirname, "..", "..", ".env");
+dotenv.config({ path: envPath });
+// Also try loading from current working directory as fallback
+dotenv.config();
 
 // Load Spotify config with error handling (lazy loading)
 let SPOTIFY_CONFIG = null;
@@ -36,9 +40,9 @@ async function loadSpotifyConfig() {
   configLoadAttempted = true;
   
   // First, try to load from environment variables (.env file)
-  const envClientId = process.env.SPOTIFY_CLIENT_ID;
-  const envClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-  const envRedirectUri = process.env.SPOTIFY_REDIRECT_URI || "http://localhost:3000";
+  const envClientId = process.env.SPOTIFY_CLIENT_ID?.trim();
+  const envClientSecret = process.env.SPOTIFY_CLIENT_SECRET?.trim();
+  const envRedirectUri = (process.env.SPOTIFY_REDIRECT_URI || "http://127.0.0.1:3000").trim();
   
   if (envClientId && envClientSecret) {
     // Use environment variables
@@ -143,7 +147,7 @@ async function ensureSpotifyConfigured() {
       `  Add to your .env file:\n` +
       `    SPOTIFY_CLIENT_ID=your_client_id\n` +
       `    SPOTIFY_CLIENT_SECRET=your_client_secret\n` +
-      `    SPOTIFY_REDIRECT_URI=http://localhost:3000\n\n` +
+      `    SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000\n\n` +
       `Option 2: Use config file\n` +
       `  1. Copy the template file:\n` +
       `     cp "${templatePath}" "${configPath}"\n\n` +
@@ -198,6 +202,7 @@ async function refreshTokenIfNeeded() {
 // Start the auth flow
 export async function startAuthFlow() {
   await ensureSpotifyConfigured();
+  
   const state = generateRandomString(16);
   const scopes = ["user-read-currently-playing", "user-read-recently-played"];
 
@@ -209,13 +214,15 @@ export async function startAuthFlow() {
     state: state,
     scope: scopes.join(" "),
   });
-
+  
   const authorizeURL = `https://accounts.spotify.com/authorize?${params.toString()}`;
 
   // Create a temporary server to handle the callback
   const server = http.createServer(async (req, res) => {
     try {
-      const url = new URL(req.url, SPOTIFY_CONFIG.redirectUri);
+      // Use 127.0.0.1 for the base URL since Spotify requires IP literal, not localhost
+      const baseUrl = SPOTIFY_CONFIG.redirectUri.replace('localhost', '127.0.0.1');
+      const url = new URL(req.url, baseUrl);
       const code = url.searchParams.get("code");
       const returnedState = url.searchParams.get("state");
 
@@ -295,7 +302,11 @@ export async function startAuthFlow() {
 
       server.close();
     } catch (error) {
-      console.error("Error during authentication:", error);
+      console.error(chalk.red("❌ Error during authentication:"));
+      console.error(chalk.red(`   Message: ${error.message}`));
+      console.error(chalk.red(`   Status: ${error.statusCode || 'N/A'}`));
+      console.error(chalk.red(`   Body: ${JSON.stringify(error.body || error, null, 2)}`));
+      console.error(chalk.dim(`   Redirect URI used: "${SPOTIFY_CONFIG.redirectUri}"`));
       res.writeHead(400);
       res.end(`Error during authentication: ${error.message}`);
       server.close();
@@ -305,7 +316,11 @@ export async function startAuthFlow() {
   // Start the server
   server.listen(3000, () => {
     console.log(chalk.blue("\n🎵 Connecting to Spotify..."));
-    open(authorizeURL);
+    // Open in Chrome (or use default browser if Chrome not found)
+    open(authorizeURL, { app: { name: 'google chrome' } }).catch(() => {
+      // Fallback to default browser if Chrome not found
+      open(authorizeURL);
+    });
   });
 
   return new Promise((resolve, reject) => {
@@ -355,6 +370,7 @@ export async function getCurrentTrack() {
     }
 
     const data = await spotifyApi.getMyCurrentPlayingTrack();
+    
     if (data.body && data.body.item) {
       return {
         current: {

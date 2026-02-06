@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name("commit-vibes")
   .description("A fun and interactive way to create git commits with vibes! 🎵")
-  .version("1.0.0")
+  .version("0.2.2")
   .argument("[message]", "commit message (optional)")
   .option("-l, --list-vibes", "list all available vibes")
   .option("-c, --custom-vibe <path>", "path to custom vibes configuration file")

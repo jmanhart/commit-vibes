@@ -1,0 +1,40 @@
+# Config files with credentials (users should create their own)
+# Note: src/ is needed, but we exclude the config file
+src/config/spotify.js
+.env
+.env.local
+.env.*.local
+.env.template
+
+# Development files
+.git/
+.gitignore
+battle-plan/
+*.log
+.DS_Store
+Thumbs.db
+
+# Test files (if any)
+tests/
+*.test.js
+*.spec.js
+
+# Documentation (keep README.md)
+docs/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+coverage/
+.nyc_output/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
