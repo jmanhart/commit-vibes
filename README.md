@@ -2,7 +2,7 @@
 
 Add vibes and music to your commits! Because why not make your git history a bit more fun!
 
-## Features
+## Featuresss
 
 - 🎵 Spotify integration - add your current song to commits
 - 🎨 Express your commit feelings with emojis
