@@ -82,17 +82,19 @@ async function loadSpotifyConfig() {
     // Read and evaluate the config file manually to avoid ES module resolution issues
     const configContent = readFileSync(configPath, "utf-8");
     
-    // Extract the SPOTIFY_CONFIG export using regex
-    // This is safer than eval and avoids module resolution issues
-    const configMatch = configContent.match(/export\s+const\s+SPOTIFY_CONFIG\s*=\s*({[\s\S]*?});/);
-    
-    if (!configMatch || !configMatch[1]) {
-      return false;
+    // Extract individual config values using targeted regexes
+    // This avoids eval/new Function and only reads known string fields
+    function extractConfigValue(content, key) {
+      const match = content.match(new RegExp(`${key}\\s*:\\s*["'\`]([^"'\`]*)["'\`]`));
+      return match ? match[1] : null;
     }
-    
-    // Safely evaluate the config object
-    // Using Function constructor is safer than eval for this use case
-    const configObj = new Function(`return ${configMatch[1]}`)();
+
+    const configObj = {
+      clientId: extractConfigValue(configContent, "clientId"),
+      clientSecret: extractConfigValue(configContent, "clientSecret"),
+      redirectUri: extractConfigValue(configContent, "redirectUri") || "http://127.0.0.1:3000",
+      scopes: extractConfigValue(configContent, "scopes"),
+    };
     
     SPOTIFY_CONFIG = configObj;
     

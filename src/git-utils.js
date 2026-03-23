@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import chalk from "chalk";
 import { VIBES } from "./vibes.js";
 import { checkCancellation, forceExit } from "./signal-handler.js";
@@ -9,7 +9,7 @@ import path from "path";
 // Write Git Message to File
 export function writeGitMessageToFile(message) {
   try {
-    execSync(`git commit -m "${message}"`, { stdio: "inherit" });
+    execFileSync("git", ["commit", "-m", message], { stdio: "inherit" });
   } catch (error) {
     console.error(chalk.red("❌ Error writing git message to file."));
     process.exit(1);
@@ -62,7 +62,7 @@ export function stageSelectedFiles(files) {
   }
 
   try {
-    execSync(`git add ${files.join(" ")}`, { stdio: "inherit" });
+    execFileSync("git", ["add", "--", ...files], { stdio: "inherit" });
   } catch (error) {
     console.error(chalk.red("❌ Error staging selected files."));
     process.exit(1);
@@ -81,7 +81,7 @@ export function stageFiles(files) {
   }
 
   try {
-    execSync(`git add ${files.join(" ")}`);
+    execFileSync("git", ["add", "--", ...files]);
     console.log(chalk.green(`✅ Staged ${files.length} file(s)`));
   } catch (error) {
     console.error(chalk.red("❌ Error staging files:"), error.message);
@@ -114,7 +114,7 @@ export async function commitChanges(message) {
     try {
       // Use git commit with -F flag to read message from file
       // Capture both stdout and stderr to show actual git messages
-      const output = execSync(`git commit -F "${tempFile}"`, { 
+      const output = execFileSync("git", ["commit", "-F", tempFile], {
         encoding: 'utf-8',
         stdio: 'pipe'
       });
