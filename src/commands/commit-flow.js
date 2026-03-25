@@ -49,7 +49,7 @@ const MOCK_SPOTIFY_DATA = {
   ],
 };
 
-export async function commitFlow(mode, args) {
+export async function commitFlow(mode, args, options = {}) {
   const isCommit = mode === "commit";
   const isPreview = mode === "preview";
   const isDemo = mode === "demo";
@@ -160,7 +160,7 @@ export async function commitFlow(mode, args) {
     message = `${message} ${vibe}`;
 
     // Spotify
-    const spotifyData = isDemo ? MOCK_SPOTIFY_DATA : await getCurrentTrack();
+    const spotifyData = isDemo ? MOCK_SPOTIFY_DATA : await getCurrentTrack({ verbose: options.verbose });
     checkCancellationState();
 
     if (spotifyData && !spotifyData.error) {

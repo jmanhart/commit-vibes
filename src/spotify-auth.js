@@ -167,7 +167,7 @@ function generateState() {
 }
 
 // Refresh token if expired
-async function refreshTokenIfNeeded() {
+async function refreshTokenIfNeeded(options = {}) {
   await ensureSpotifyConfigured();
   let tokens;
   try {
@@ -193,7 +193,14 @@ async function refreshTokenIfNeeded() {
         spotifyApi.setAccessToken(newTokens.access_token);
         return true;
       } catch (refreshError) {
-        console.error("Error refreshing token:", refreshError);
+        const desc = refreshError.body?.error_description || refreshError.message || "Unknown error";
+        console.log(chalk.yellow(`\n⚠️  Spotify auth failed: ${desc}`));
+        console.log(chalk.gray("  Skipping Spotify integration. Re-run with --spotify to reconnect."));
+        if (options.verbose) {
+          console.log(chalk.gray(`\n  Debug details:`));
+          console.log(chalk.gray(`  Status: ${refreshError.statusCode || "N/A"}`));
+          console.log(chalk.gray(`  Error: ${JSON.stringify(refreshError.body || refreshError.message, null, 2)}`));
+        }
         return false;
       }
     }
@@ -355,18 +362,18 @@ function formatRelativeTime(timestamp) {
 }
 
 // Get currently playing track
-export async function getCurrentTrack() {
+export async function getCurrentTrack(options = {}) {
   // Try to load config, but don't throw error if not configured
   const isConfigured = await loadSpotifyConfig();
-  
+
   if (!isConfigured || !spotifyApi) {
     // Spotify not configured - return null to indicate no Spotify data
     return null;
   }
-  
+
   try {
     // Check and refresh token if needed
-    const isTokenValid = await refreshTokenIfNeeded();
+    const isTokenValid = await refreshTokenIfNeeded(options);
     if (!isTokenValid) {
       return { error: "auth" };
     }
@@ -414,7 +421,7 @@ export async function getRecentTracks(limit = 3) {
       playedAt: formatRelativeTime(item.played_at),
     }));
   } catch (error) {
-    console.error("Error getting recent tracks:", error);
+    console.log(chalk.yellow("⚠️  Could not fetch recent Spotify tracks."));
     return [];
   }
 }

@@ -27,6 +27,7 @@ program
   .option("--status", "show if Spotify is connected")
   .option("--demo", "run in demo mode (no real git or Spotify actions)")
   .option("--preview", "preview commit with real git and Spotify data (no commit created)")
+  .option("-v, --verbose", "show detailed error output for debugging")
   .addHelpText("beforeAll", HEADER)
   .addHelpText("after", HELP_CONTENT);
 
@@ -53,12 +54,12 @@ export async function runCLI() {
     return;
   }
   if (options.demo) {
-    await handleDemo(args);
+    await handleDemo(args, options);
     return;
   }
   if (options.preview) {
-    await handlePreview(args);
+    await handlePreview(args, options);
     return;
   }
-  await handleCommit(args);
+  await handleCommit(args, options);
 }
